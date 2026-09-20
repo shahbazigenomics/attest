@@ -181,3 +181,49 @@ test_that("normalised matrices are caught at any depth, and flat totals are flag
     expect_equal(attest_counts(round(m / 40))$verdict, "PERMITTED", info = nm)
   }
 })
+
+test_that("design adequacy: estimability, partial confounding, replication", {
+  f <- system.file("extdata", "fixtures.rds", package = "attest")
+  if (!nzchar(f)) f <- "inst/extdata/fixtures.rds"
+  if (!file.exists(f)) f <- "../../inst/extdata/fixtures.rds"
+  m <- readRDS(f)$airway
+
+  balanced  <- data.frame(cond = factor(rep(c("ctrl", "trt"), each = 4)),
+                          batch = factor(rep(c("A", "B"), times = 4)))
+  confounded <- data.frame(cond = factor(rep(c("ctrl", "trt"), each = 4)),
+                           batch = factor(rep(c("A", "B"), each = 4)))
+  partial    <- data.frame(cond = factor(rep(c("ctrl", "trt"), each = 4)),
+                           batch = factor(c("A", "A", "A", "A", "B", "B", "B", "A")))
+
+  ok <- attest_design(m, balanced, ~ batch + cond)
+  expect_equal(ok$verdict, "PERMITTED")
+  expect_equal(unname(ok$measurements$max_vif), 1)
+  expect_equal(unname(ok$measurements$effective_n), 8)
+
+  # complete confounding: caught before DESeq2 refuses and before limma quietly
+  # returns NA coefficients
+  conf <- attest_design(m, confounded, ~ batch + cond)
+  expect_equal(conf$verdict, "NOT PERMITTED")
+  expect_true(length(conf$measurements$not_estimable) >= 1)
+
+  # partial confounding: nothing else reports this at all
+  part <- attest_design(m, partial, ~ batch + cond)
+  expect_equal(unname(round(part$measurements$max_vif, 2)), 2.5)
+  expect_equal(unname(round(part$measurements$effective_n, 1)), 3.2)
+  expect_equal(part$verdict, "CAUTION")
+
+  # replication
+  k <- c(1, 2, 5, 6)
+  expect_equal(attest_design(m[, k], balanced[k, ], ~ batch + cond)$verdict, "CAUTION")
+  k1 <- c(1, 2, 3, 5)
+  expect_equal(attest_design(m[, k1], balanced[k1, ], ~ cond)$verdict, "NOT PERMITTED")
+
+  # malformed input never stops
+  expect_equal(attest_design(m, balanced, ~ batch + missing_col)$verdict, "UNKNOWN")
+  expect_equal(attest_design(m, balanced[1:6, ], ~ batch + cond)$verdict, "UNKNOWN")
+
+  # runs inside the report only when a design is supplied
+  expect_equal(length(attest(m)$checks), 3L)
+  expect_equal(length(attest(m, metadata = balanced, design = ~ batch + cond)$checks), 4L)
+  expect_equal(attest(m, metadata = confounded, design = ~ batch + cond)$verdict, "NOT PERMITTED")
+})

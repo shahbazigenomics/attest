@@ -11,13 +11,17 @@
 #'   (`attest_completeness()`)
 #' * identity - do the samples match their labels, and is any library present
 #'   twice? (`attest_identity()`)
+#' * design - can the design estimate the effect, and at what effective sample
+#'   size? (`attest_design()`; runs only when `metadata` and `design` are given)
 #'
-#' Planned, not yet implemented: design adequacy, detectability of negative claims.
+#' Planned, not yet implemented: detectability of negative claims (for which genes
+#' could a change have been seen at all).
 #'
 #' @param x counts: matrix, data.frame, SummarizedExperiment, DESeqDataSet or
 #'   DGEList.
 #' @param ... passed to individual checks: `n_expected` (completeness),
-#'   `metadata`, `sex_col`, `dup_floor` (identity).
+#'   `metadata`, `sex_col`, `dup_floor` (identity), `design`, `of_interest`
+#'   (design).
 #' @return object of class "attest_report".
 #' @export
 attest <- function(x, ...) {
@@ -27,6 +31,11 @@ attest <- function(x, ...) {
     "completeness" = do.call(attest_completeness, c(list(x), args[names(args) %in% "n_expected"])),
     "identity"     = do.call(attest_identity,
                              c(list(x), args[names(args) %in% c("metadata", "sex_col", "dup_floor")])))
+  if (!is.null(args$design) && !is.null(args$metadata)) {
+    checks[["design"]] <- do.call(
+      attest_design,
+      c(list(x), args[names(args) %in% c("metadata", "design", "of_interest", "min_effective_frac")]))
+  }
   structure(list(checks = checks,
                  verdict = at_worst(vapply(checks, function(c) c$verdict, character(1)))),
             class = "attest_report")
