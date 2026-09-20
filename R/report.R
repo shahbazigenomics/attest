@@ -13,15 +13,17 @@
 #'   twice? (`attest_identity()`)
 #' * design - can the design estimate the effect, and at what effective sample
 #'   size? (`attest_design()`; runs only when `metadata` and `design` are given)
+#' * detectability - for which genes could a change have been seen at all?
+#'   (`attest_detectability()`; runs when `group`, or a two-level `of_interest`,
+#'   is available)
 #'
-#' Planned, not yet implemented: detectability of negative claims (for which genes
-#' could a change have been seen at all).
+#' All five planned checks are implemented.
 #'
 #' @param x counts: matrix, data.frame, SummarizedExperiment, DESeqDataSet or
 #'   DGEList.
 #' @param ... passed to individual checks: `n_expected` (completeness),
 #'   `metadata`, `sex_col`, `dup_floor` (identity), `design`, `of_interest`
-#'   (design).
+#'   (design), `group`, `target_fc`, `power` (detectability).
 #' @return object of class "attest_report".
 #' @export
 attest <- function(x, ...) {
@@ -31,6 +33,19 @@ attest <- function(x, ...) {
     "completeness" = do.call(attest_completeness, c(list(x), args[names(args) %in% "n_expected"])),
     "identity"     = do.call(attest_identity,
                              c(list(x), args[names(args) %in% c("metadata", "sex_col", "dup_floor")])))
+  grp <- args$group
+  if (is.null(grp) && !is.null(args$design) && !is.null(args$metadata)) {
+    of <- args$of_interest
+    if (is.null(of)) { tv <- all.vars(args$design); of <- tv[length(tv)] }
+    md <- as.data.frame(args$metadata)
+    if (of %in% names(md) && nlevels(droplevels(as.factor(md[[of]]))) == 2) grp <- md[[of]]
+  }
+  if (!is.null(grp)) {
+    checks[["detectability"]] <- do.call(
+      attest_detectability,
+      c(list(x), list(group = grp),
+        args[names(args) %in% c("metadata", "power", "alpha", "target_fc")]))
+  }
   if (!is.null(args$design) && !is.null(args$metadata)) {
     checks[["design"]] <- do.call(
       attest_design,

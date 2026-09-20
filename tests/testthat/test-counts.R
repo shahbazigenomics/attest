@@ -227,3 +227,38 @@ test_that("design adequacy: estimability, partial confounding, replication", {
   expect_equal(length(attest(m, metadata = balanced, design = ~ batch + cond)$checks), 4L)
   expect_equal(attest(m, metadata = confounded, design = ~ batch + cond)$verdict, "NOT PERMITTED")
 })
+
+test_that("detectability reports per-gene thresholds and needs the groups", {
+  f <- system.file("extdata", "fixtures.rds", package = "attest")
+  if (!nzchar(f)) f <- "inst/extdata/fixtures.rds"
+  if (!file.exists(f)) f <- "../../inst/extdata/fixtures.rds"
+  m <- readRDS(f)$airway
+  dex <- factor(rep(c("untrt", "trt"), times = 4))
+
+  d <- attest_detectability(m, group = dex)
+  mdfc <- d$measurements$min_detectable_fc
+  expect_equal(length(mdfc), nrow(m))
+  expect_true(all(mdfc >= 1))                       # a threshold below 1 is nonsense
+  expect_true(all(is.infinite(mdfc[rowSums(m) == 0])))  # unexpressed genes: never
+
+  # more samples must never need a larger change
+  d4 <- attest_detectability(m, group = dex)$measurements$median_min_detectable_fc
+  k  <- c(1, 2, 5, 6)
+  d2 <- attest_detectability(m[, k], group = dex[k])$measurements$median_min_detectable_fc
+  expect_true(d4 < d2)
+
+  # highly expressed genes must be easier to detect than quiet ones
+  mu <- d$measurements$mean_count
+  hi <- mu > stats::quantile(mu[mu > 0], 0.9); lo <- mu > 0 & mu < stats::quantile(mu[mu > 0], 0.25)
+  expect_true(stats::median(mdfc[hi]) < stats::median(mdfc[lo]))
+
+  # inputs it cannot answer
+  expect_equal(attest_detectability(m)$verdict, "UNKNOWN")                       # no groups
+  expect_equal(attest_detectability(m, group = rep("a", 8))$verdict, "UNKNOWN")  # one level
+  expect_equal(attest_detectability(m[, 1:3], group = factor(c("a","a","b")))$verdict, "UNKNOWN")
+
+  # runs in the report when a two-level factor is available
+  md <- data.frame(cell = factor(rep(c("A","B","C","D"), each = 2)), dex = dex)
+  expect_true("detectability" %in% names(attest(m, metadata = md, design = ~ cell + dex)$checks))
+  expect_false("detectability" %in% names(attest(m)$checks))
+})
