@@ -9,18 +9,24 @@
 #' * value scale - is this a raw count matrix? (`attest_counts()`)
 #' * completeness - has the matrix been filtered before you got it?
 #'   (`attest_completeness()`)
+#' * identity - do the samples match their labels, and is any library present
+#'   twice? (`attest_identity()`)
 #'
-#' Planned, not yet implemented: sample identity, design adequacy, detectability
-#' of negative claims.
+#' Planned, not yet implemented: design adequacy, detectability of negative claims.
 #'
 #' @param x counts: matrix, data.frame, SummarizedExperiment, DESeqDataSet or
 #'   DGEList.
-#' @param ... passed to individual checks (e.g. `n_expected` for completeness).
+#' @param ... passed to individual checks: `n_expected` (completeness),
+#'   `metadata`, `sex_col`, `dup_floor` (identity).
 #' @return object of class "attest_report".
 #' @export
 attest <- function(x, ...) {
-  checks <- list("value scale"  = attest_counts(x),
-                 "completeness" = attest_completeness(x, ...))
+  args   <- list(...)
+  checks <- list(
+    "value scale"  = attest_counts(x),
+    "completeness" = do.call(attest_completeness, c(list(x), args[names(args) %in% "n_expected"])),
+    "identity"     = do.call(attest_identity,
+                             c(list(x), args[names(args) %in% c("metadata", "sex_col", "dup_floor")])))
   structure(list(checks = checks,
                  verdict = at_worst(vapply(checks, function(c) c$verdict, character(1)))),
             class = "attest_report")

@@ -127,3 +127,36 @@ test_that("completeness distinguishes complete matrices from filtered ones", {
   expect_true("completeness" %in% names(rep$checks))
   expect_equal(attest(m[rowSums(m) >= 10, ])$verdict, "CAUTION")  # weakest check wins
 })
+
+test_that("identity infers sex, catches mislabels and duplicate libraries", {
+  f <- system.file("extdata", "fixtures.rds", package = "attest")
+  if (!nzchar(f)) f <- "inst/extdata/fixtures.rds"
+  if (!file.exists(f)) f <- "../../inst/extdata/fixtures.rds"
+  fx <- readRDS(f)
+  m <- fx$airway
+
+  res <- attest_identity(m)
+  expect_equal(res$verdict, "PERMITTED")
+  expect_equal(unname(table(res$measurements$sex_called)[c("female", "male")]), c(2L, 6L))
+
+  md <- data.frame(sex = c(rep("male", 6), "female", "female"))
+  expect_equal(attest_identity(m, metadata = md)$verdict, "PERMITTED")
+
+  md_wrong <- md; md_wrong$sex[7] <- "male"
+  bad <- attest_identity(m, metadata = md_wrong)
+  expect_equal(bad$verdict, "NOT PERMITTED")
+  expect_equal(bad$measurements$sex_mismatches, 1)
+
+  # duplicates: none in any clean cohort, caught when planted, in both species
+  for (nm in names(fx)) expect_equal(nrow(at_duplicate_pairs(fx[[nm]])$pairs), 0, info = nm)
+  expect_equal(nrow(at_duplicate_pairs(cbind(m, copy = m[, 1]))$pairs), 1)
+  set.seed(1)
+  reseq <- rbinom(nrow(fx$fission), size = as.integer(fx$fission[, 1]), prob = 0.9)
+  expect_equal(nrow(at_duplicate_pairs(cbind(fx$fission, reseq = reseq))$pairs), 1)
+
+  # non-human data says so instead of guessing
+  expect_true(any(grepl("sex check", attest_identity(fx$fission)$not_assessed)))
+
+  expect_equal(length(attest(m)$checks), 3)
+  expect_equal(attest(m, metadata = md_wrong)$verdict, "NOT PERMITTED")
+})
