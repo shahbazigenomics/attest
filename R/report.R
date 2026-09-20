@@ -2,7 +2,9 @@
 #'
 #' Runs every available check on a count matrix and returns one report: an
 #' overall verdict, each check's verdict with its evidence, and everything the
-#' inputs could not answer. Individual checks stay callable on their own
+#' inputs could not answer. The overall verdict comes from the checks that look
+#' for faults; `detectability` reports scope (what the data can support) and is
+#' shown separately without changing it. Individual checks stay callable on their own
 #' (`attest_counts()`); this is the one call that runs them all.
 #'
 #' Checks currently implemented:
@@ -51,8 +53,10 @@ attest <- function(x, ...) {
       attest_design,
       c(list(x), args[names(args) %in% c("metadata", "design", "of_interest", "min_effective_frac")]))
   }
+  kinds <- vapply(checks, function(c) if (is.null(c$kind)) "fault" else c$kind, character(1))
+  faults <- vapply(checks[kinds == "fault"], function(c) c$verdict, character(1))
   structure(list(checks = checks,
-                 verdict = at_worst(vapply(checks, function(c) c$verdict, character(1)))),
+                 verdict = at_worst(faults)),
             class = "attest_report")
 }
 
@@ -67,12 +71,18 @@ at_worst <- function(v) {
 print.attest_report <- function(x, ...) {
   cat("attest - can this data support the analysis?\n")
   cat("overall:", x$verdict, "\n")
-  for (nm in names(x$checks)) {
+  kinds <- vapply(x$checks, function(c) if (is.null(c$kind)) "fault" else c$kind, character(1))
+  show <- function(nm) {
     ch <- x$checks[[nm]]
     cat("\n[", nm, "] ", ch$verdict, " - ", ch$headline, "\n", sep = "")
     for (e in ch$evidence)     cat("  -", e, "\n")
     if (!is.null(ch$consequence)) cat("  cost:", ch$consequence, "\n")
     for (u in ch$not_assessed) cat("  not assessed:", u, "\n")
+  }
+  for (nm in names(x$checks)[kinds == "fault"]) show(nm)
+  if (any(kinds == "scope")) {
+    cat("\n-- what this data can support (does not change the verdict above) --\n")
+    for (nm in names(x$checks)[kinds == "scope"]) show(nm)
   }
   invisible(x)
 }
@@ -92,6 +102,7 @@ attest_as_list <- function(x) {
     verdict = x$verdict,
     checks  = lapply(x$checks, function(ch) list(
       verdict      = ch$verdict,
+      kind         = if (is.null(ch$kind)) "fault" else ch$kind,
       headline     = ch$headline,
       evidence     = as.character(ch$evidence),
       consequence  = if (is.null(ch$consequence)) NA_character_ else ch$consequence,

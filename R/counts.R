@@ -191,8 +191,16 @@ at_as_matrix <- function(x) {
   if (is.null(m) || !is.numeric(m)) NULL else m
 }
 
-at_result <- function(verdict, headline, evidence, consequence, not_assessed, measurements) {
+# `kind` says what sort of statement a check makes:
+#   "fault" - something may be wrong with the data; these set the overall verdict
+#   "scope" - what the data can support; a limitation, not a defect, so it is
+#             reported separately, the way a clinical report separates its
+#             limitations section from its result
+at_result <- function(verdict, headline, evidence, consequence, not_assessed,
+                      measurements, kind = c("fault", "scope")) {
+  kind <- match.arg(kind)
   structure(list(verdict = verdict,
+                 kind = kind,
                  headline = headline,
                  evidence = evidence[!vapply(evidence, is.null, logical(1))],
                  consequence = consequence,
@@ -248,7 +256,7 @@ at_lattice <- function(m, n_small = 30, tol = 0.15) {
 #' @export
 print.attest_check <- function(x, ...) {
   cat("attest check\n")
-  cat("verdict:", x$verdict, "-", x$headline, "\n")
+  cat(if (identical(x$kind, "scope")) "scope:" else "verdict:", x$verdict, "-", x$headline, "\n")
   if (length(x$evidence)) {
     cat("why:\n"); for (e in x$evidence) cat("  -", e, "\n")
   }

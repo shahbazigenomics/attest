@@ -261,3 +261,29 @@ test_that("detectability reports per-gene thresholds and needs the groups", {
   expect_true("detectability" %in% names(attest(m, metadata = md, design = ~ cell + dex)$checks))
   expect_false("detectability" %in% names(attest(m)$checks))
 })
+
+test_that("scope checks report but do not set the overall verdict", {
+  f <- system.file("extdata", "fixtures.rds", package = "attest")
+  if (!nzchar(f)) f <- "inst/extdata/fixtures.rds"
+  if (!file.exists(f)) f <- "../../inst/extdata/fixtures.rds"
+  m <- readRDS(f)$airway
+  md <- data.frame(cell = factor(rep(c("A","B","C","D"), each = 2)),
+                   dex  = factor(rep(c("untrt","trt"), times = 4)))
+
+  r <- attest(m, metadata = md, design = ~ cell + dex)
+  expect_equal(r$checks[["detectability"]]$kind, "scope")
+  expect_equal(r$checks[["value scale"]]$kind, "fault")
+
+  # detectability is a limitation, not a defect: a good dataset stays PERMITTED
+  # even when most genes cannot show a 2-fold change
+  expect_equal(r$checks[["detectability"]]$verdict, "CAUTION")
+  expect_equal(r$verdict, "PERMITTED")
+
+  # a real fault still sets the verdict
+  cpm <- round(t(t(m) / colSums(m)) * 1e6)
+  expect_equal(attest(cpm, metadata = md, design = ~ cell + dex)$verdict, "NOT PERMITTED")
+
+  # and the distinction survives into the machine-readable form
+  kinds <- vapply(attest_as_list(r)$checks, function(c) c$kind, character(1))
+  expect_equal(sum(kinds == "scope"), 1L)
+})

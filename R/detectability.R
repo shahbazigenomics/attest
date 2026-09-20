@@ -30,6 +30,10 @@
 #'   Default 0.05.
 #' @param target_fc the effect size the study cares about, used for the
 #'   study-level summary. Default 2 (a doubling).
+#' This check reports *scope*, not a fault: it says what the data can support, so
+#' it does not lower the overall verdict of [attest()], the way a clinical report
+#' keeps its limitations section separate from its result.
+#'
 #' @return object of class "attest_check"; `$measurements$min_detectable_fc` is
 #'   the per-gene vector.
 #' @export
@@ -39,27 +43,27 @@ attest_detectability <- function(x, group = NULL, metadata = NULL, power = 0.8,
   m <- at_as_matrix(x)
   if (is.null(m)) {
     return(at_result("UNKNOWN", "The input could not be read as a numeric matrix.",
-                     character(0), NULL, character(0), list(input_class = class(x)[1])))
+                     character(0), NULL, character(0), list(input_class = class(x)[1]), kind = "scope"))
   }
   g <- at_resolve_group(group, metadata, m)
   if (is.null(g)) {
     return(at_result("UNKNOWN",
                      "Detectability needs the two groups being compared: pass group = <factor> or group = \"<column>\" with metadata.",
-                     character(0), NULL, character(0), list(dim = dim(m))))
+                     character(0), NULL, character(0), list(dim = dim(m)), kind = "scope"))
   }
   lev <- levels(g)
   if (length(lev) != 2) {
     return(at_result("UNKNOWN",
                      sprintf("Detectability compares two groups; '%s' has %d levels.",
                              deparse(substitute(group)), length(lev)),
-                     character(0), NULL, character(0), list(levels = lev)))
+                     character(0), NULL, character(0), list(levels = lev), kind = "scope"))
   }
   n1 <- sum(g == lev[1]); n2 <- sum(g == lev[2])
   if (min(n1, n2) < 2) {
     return(at_result("UNKNOWN",
                      sprintf("Detectability needs at least 2 samples per group (%s = %d, %s = %d).",
                              lev[1], n1, lev[2], n2),
-                     character(0), NULL, character(0), list(n1 = n1, n2 = n2)))
+                     character(0), NULL, character(0), list(n1 = n1, n2 = n2), kind = "scope"))
   }
 
   sf   <- at_size_factors(m)
@@ -129,7 +133,7 @@ attest_detectability <- function(x, group = NULL, metadata = NULL, power = 0.8,
           "attest_detectability(x, group)$measurements$min_detectable_fc gives the per-gene number,",
           "which is what a negative claim about a named gene has to quote."),
     "the estimate is a negative-binomial Wald approximation with method-of-moments dispersion; validation/detectability_calibration.R measures how close the claimed 80% power comes to DESeq2 in simulation",
-    ev)
+    ev, kind = "scope")
 }
 
 at_resolve_group <- function(group, metadata, m) {
