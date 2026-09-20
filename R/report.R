@@ -7,17 +7,20 @@
 #'
 #' Checks currently implemented:
 #' * value scale - is this a raw count matrix? (`attest_counts()`)
+#' * completeness - has the matrix been filtered before you got it?
+#'   (`attest_completeness()`)
 #'
-#' Planned, not yet implemented: completeness (pre-filtering), sample identity,
-#' design adequacy, detectability of negative claims.
+#' Planned, not yet implemented: sample identity, design adequacy, detectability
+#' of negative claims.
 #'
 #' @param x counts: matrix, data.frame, SummarizedExperiment, DESeqDataSet or
 #'   DGEList.
-#' @param ... passed to individual checks.
+#' @param ... passed to individual checks (e.g. `n_expected` for completeness).
 #' @return object of class "attest_report".
 #' @export
 attest <- function(x, ...) {
-  checks <- list("value scale" = attest_counts(x, ...))
+  checks <- list("value scale"  = attest_counts(x),
+                 "completeness" = attest_completeness(x, ...))
   structure(list(checks = checks,
                  verdict = at_worst(vapply(checks, function(c) c$verdict, character(1)))),
             class = "attest_report")

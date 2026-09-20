@@ -3,7 +3,7 @@
 #   BiocManager::install(c("airway","pasilla","fission","parathyroidSE"))
 # Writes validation/real_data_results.csv
 
-source("R/check_scale.R")
+for (f in list.files("R", full.names = TRUE)) source(f)
 
 # ---- collect raw count matrices -------------------------------------------
 raw_sets <- list()

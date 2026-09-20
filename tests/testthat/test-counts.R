@@ -93,3 +93,37 @@ test_that("attest() merges checks into one report", {
   expect_equal(l$verdict, "NOT PERMITTED")
   expect_true(nzchar(l$checks[["value scale"]]$headline))
 })
+
+test_that("completeness distinguishes complete matrices from filtered ones", {
+  f <- system.file("extdata", "fixtures.rds", package = "attest")
+  if (!nzchar(f)) f <- "inst/extdata/fixtures.rds"
+  if (!file.exists(f)) f <- "../../inst/extdata/fixtures.rds"
+  fx <- readRDS(f)
+
+  # every complete matrix keeps genes that are zero everywhere, whatever the species
+  for (nm in names(fx)) {
+    res <- attest_completeness(fx[[nm]])
+    expect_equal(res$verdict, "PERMITTED", info = nm)
+    expect_true(res$measurements$n_all_zero > 0, info = nm)
+  }
+
+  m <- fx$airway
+  drop_zero <- attest_completeness(m[rowSums(m) > 0, ])
+  expect_equal(drop_zero$verdict, "CAUTION")
+  expect_equal(drop_zero$measurements$min_row_total, 1)
+
+  thresholded <- attest_completeness(m[rowSums(m) >= 10, ])
+  expect_equal(thresholded$verdict, "CAUTION")
+  expect_equal(thresholded$measurements$min_row_total, 10)   # the floor recovers the filter
+
+  # gene selection is only assessable when the annotation size is supplied
+  expect_true(any(grepl("n_expected", attest_completeness(m)$not_assessed)))
+  sel <- attest_completeness(m[1:20000, ], n_expected = nrow(m))
+  expect_equal(sel$verdict, "CAUTION")
+
+  # and the merged report now carries both checks
+  rep <- attest(m)
+  expect_equal(length(rep$checks), 2)
+  expect_true("completeness" %in% names(rep$checks))
+  expect_equal(attest(m[rowSums(m) >= 10, ])$verdict, "CAUTION")  # weakest check wins
+})

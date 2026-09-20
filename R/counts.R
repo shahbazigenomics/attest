@@ -230,7 +230,7 @@ at_lattice <- function(m, n_small = 30, tol = 0.15) {
 
 #' @export
 print.attest_check <- function(x, ...) {
-  cat("attest - is this a raw count matrix?\n")
+  cat("attest check\n")
   cat("verdict:", x$verdict, "-", x$headline, "\n")
   if (length(x$evidence)) {
     cat("why:\n"); for (e in x$evidence) cat("  -", e, "\n")

@@ -1,6 +1,6 @@
 # How often does attest_counts mis-flag genuine raw counts?
 # Simulated regimes only: real-data validation is harness.R (needs Bioconductor).
-source("R/check_scale.R")
+for (f in list.files("R", full.names = TRUE)) source(f)
 set.seed(42)
 
 sim_counts <- function(n_genes, n_samples, mean_lib, lib_cv, size = 4, umi = FALSE) {
