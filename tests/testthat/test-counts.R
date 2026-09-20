@@ -104,17 +104,17 @@ test_that("completeness distinguishes complete matrices from filtered ones", {
   for (nm in names(fx)) {
     res <- attest_completeness(fx[[nm]])
     expect_equal(res$verdict, "PERMITTED", info = nm)
-    expect_true(res$measurements$n_all_zero > 0, info = nm)
+    expect_true(as.integer(res$measurements$n_all_zero) > 0L, info = nm)
   }
 
   m <- fx$airway
   drop_zero <- attest_completeness(m[rowSums(m) > 0, ])
   expect_equal(drop_zero$verdict, "CAUTION")
-  expect_equal(drop_zero$measurements$min_row_total, 1)
+  expect_equal(as.numeric(drop_zero$measurements$min_row_total), 1)
 
   thresholded <- attest_completeness(m[rowSums(m) >= 10, ])
   expect_equal(thresholded$verdict, "CAUTION")
-  expect_equal(thresholded$measurements$min_row_total, 10)   # the floor recovers the filter
+  expect_equal(as.numeric(thresholded$measurements$min_row_total), 10)   # the floor recovers the filter
 
   # gene selection is only assessable when the annotation size is supplied
   expect_true(any(grepl("n_expected", attest_completeness(m)$not_assessed)))
@@ -123,7 +123,7 @@ test_that("completeness distinguishes complete matrices from filtered ones", {
 
   # and the merged report now carries both checks
   rep <- attest(m)
-  expect_equal(length(rep$checks), 2)
+  expect_equal(length(rep$checks), 3L)
   expect_true("completeness" %in% names(rep$checks))
   expect_equal(attest(m[rowSums(m) >= 10, ])$verdict, "CAUTION")  # weakest check wins
 })
@@ -137,7 +137,9 @@ test_that("identity infers sex, catches mislabels and duplicate libraries", {
 
   res <- attest_identity(m)
   expect_equal(res$verdict, "PERMITTED")
-  expect_equal(unname(table(res$measurements$sex_called)[c("female", "male")]), c(2L, 6L))
+  called <- res$measurements$sex_called
+  expect_equal(sum(called == "female"), 2L)
+  expect_equal(sum(called == "male"), 6L)
 
   md <- data.frame(sex = c(rep("male", 6), "female", "female"))
   expect_equal(attest_identity(m, metadata = md)$verdict, "PERMITTED")
@@ -145,18 +147,18 @@ test_that("identity infers sex, catches mislabels and duplicate libraries", {
   md_wrong <- md; md_wrong$sex[7] <- "male"
   bad <- attest_identity(m, metadata = md_wrong)
   expect_equal(bad$verdict, "NOT PERMITTED")
-  expect_equal(bad$measurements$sex_mismatches, 1)
+  expect_equal(as.integer(bad$measurements$sex_mismatches), 1L)
 
   # duplicates: none in any clean cohort, caught when planted, in both species
-  for (nm in names(fx)) expect_equal(nrow(at_duplicate_pairs(fx[[nm]])$pairs), 0, info = nm)
-  expect_equal(nrow(at_duplicate_pairs(cbind(m, copy = m[, 1]))$pairs), 1)
+  for (nm in names(fx)) expect_equal(nrow(at_duplicate_pairs(fx[[nm]])$pairs), 0L, info = nm)
+  expect_equal(nrow(at_duplicate_pairs(cbind(m, copy = m[, 1]))$pairs), 1L)
   set.seed(1)
   reseq <- rbinom(nrow(fx$fission), size = as.integer(fx$fission[, 1]), prob = 0.9)
-  expect_equal(nrow(at_duplicate_pairs(cbind(fx$fission, reseq = reseq))$pairs), 1)
+  expect_equal(nrow(at_duplicate_pairs(cbind(fx$fission, reseq = reseq))$pairs), 1L)
 
   # non-human data says so instead of guessing
   expect_true(any(grepl("sex check", attest_identity(fx$fission)$not_assessed)))
 
-  expect_equal(length(attest(m)$checks), 3)
+  expect_equal(length(attest(m)$checks), 3L)
   expect_equal(attest(m, metadata = md_wrong)$verdict, "NOT PERMITTED")
 })
