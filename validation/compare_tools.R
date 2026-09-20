@@ -1,5 +1,5 @@
 # What do the standard tools say when handed an invalid matrix?
-# Run in the countsworthy project.  Needs: DESeq2, edgeR, limma (RNAseqQC optional).
+# Run in the attest project.  Needs: DESeq2, edgeR, limma (RNAseqQC optional).
 #   BiocManager::install(c("edgeR","limma","RNAseqQC"))
 source("R/check_scale.R")
 
@@ -34,7 +34,7 @@ tools <- list(
     limma::voom(x, model.matrix(~ grp, cd)),
   # RNAseqQC::make_dds omitted: it prompts to create an AnnotationHub cache,
   # which blocks a scripted run and is unrelated to input validation.
-  "countsworthy" = function(x) {
+  "attest" = function(x) {
     v <- cw_check_scale(x); stop(paste0(v$verdict, ": ", v$reasons[1]))
   }
 )

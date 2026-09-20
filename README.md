@@ -2,34 +2,65 @@
 
 **Can this data support the analysis you are about to run on it?**
 
-`attest` audits an RNA-seq count matrix *before* differential expression. It does not
-analyse expression. It adjudicates one claim at a time, reports the evidence behind the
-verdict, and says which checks your inputs could not answer.
+`attest` audits an RNA-seq count matrix and its design *before* differential expression.
+It does not analyse expression. It adjudicates one claim at a time, reports the evidence
+behind each verdict, and says which claims your inputs could not answer.
 
 ```r
 library(attest)
-attest_counts(counts)
+attest(counts, metadata = colData, design = ~ cell + dex, of_interest = "dex")
 ```
 
 ```
-attest - is this a raw count matrix?
-verdict: NOT PERMITTED - These are CPM or TPM values, not raw counts.
-why:
-  - every sample totals about 1,000,000 (all slightly below, so the values were scaled
-    down then rounded), which happens when each column is divided by its own library size
-  - 72% of genes are zero in every sample, so rounding has already destroyed the
-    low-expression genes
-  - small values are spaced about 1.94 apart in 7 of 8 samples, implying original
-    libraries of roughly 515,000 reads
-what it costs: DESeq2, edgeR and limma will run on this without complaint and report far
-fewer differences than the data contain (3,993 -> 877 genes in our airway test).
+attest - can this data support the analysis?
+overall: PERMITTED
+
+[value scale] PERMITTED - Consistent with raw counts.
+  - all values are whole numbers; sample totals differ 1.99x and size factors 2.12x, as
+    expected when depth has not been divided out
+  - variance/mean is 2.29, above the Poisson floor
+
+[completeness] PERMITTED - Complete: the matrix still contains genes with no reads at all.
+  - 1,446 of 3,000 genes (48.2%) are zero in every sample; filtering removes exactly
+    those, so they are the sign that nothing was removed
+  not assessed: gene-selection check (protein-coding only, a panel, or another subset):
+    needs the annotation size, so pass n_expected = <genes in your GTF>
+
+[identity] PERMITTED - Samples are consistent with their labels.
+  - sex inferred from expression: 2 female, 6 male
+  - no pair stands out as the same library (highest 0.9415, cohort median 0.9295)
+  not assessed: DNA-RNA match: this check compares samples with each other and with the
+    sample sheet, not with genotypes; for that, run somalier or NGSCheckMate on the BAMs
+
+[design] PERMITTED - The design can estimate the effect of 'dex'.
+  - 'dex' is balanced against the other terms (variance inflation 1.00x, no effective
+    loss of samples)
+  - group sizes: untrt = 4, trt = 4
+
+-- what this data can support (does not change the verdict above) --
+
+[detectability] CAUTION - A 2.0-fold change was detectable for under 80% of genes.
+  - of the 716 genes with a mean count of 10 or more, 60% could have shown a 2.0-fold
+    change at 80% power
+  - among those, the median gene needed 1.9-fold and the quietest quarter 2.4-fold or more
+  - the 838 genes below that count are effectively untestable here (median 65-fold needed)
+  - group sizes 4 and 4; about 49 genes really differ, so Benjamini-Hochberg judges each
+    gene at p < 0.0016 (Bonferroni would be 3.2e-05)
+  cost: A gene absent from your results list is not evidence that it does not respond;
+    for genes above their threshold above, it is evidence, and for the rest it is not.
 ```
+
+(That run is on the 3,000-gene airway fixture shipped with the package, so the gene counts
+are smaller than a real annotation would give. Every check is also callable on its own:
+`attest_counts()`, `attest_completeness()`, `attest_identity()`, `attest_design()`,
+`attest_detectability()`.)
 
 ## Why it exists
 
-Count models assume counts. The standard tools check only that the values are whole
-numbers, and **rounding defeats that check**. We handed the same airway matrix, in four
-forms, to each tool and recorded every message it produced:
+Count models assume counts, and count-based designs assume the effect is separable from
+everything else in the sample sheet. The standard tools check a little of the first and
+almost none of the second. We handed the same airway matrix, in four forms, to each tool
+and recorded every message it produced (`validation/compare_tools.R`):
 
 | Input | DESeq2 | edgeR | limma-voom | attest |
 |---|---|---|---|---|
@@ -38,8 +69,8 @@ forms, to each tool and recorded every message it produced:
 | **rounded TPM** | "converting counts to integer mode" | **silent** | **silent** | NOT PERMITTED |
 | FPKM (non-integer) | ERROR: not integers | **silent** | **silent** | NOT PERMITTED |
 
-The consequence is not noise, it is lost findings. On the airway dataset
-(`~ cell + dex`, padj < 0.05):
+Rounding defeats the only check the tools make, and the consequence is not noise, it is
+lost findings. On the airway dataset (`~ cell + dex`, padj < 0.05):
 
 | Input | DE genes | Shared with the correct run |
 |---|---|---|
@@ -51,48 +82,114 @@ The consequence is not noise, it is lost findings. On the airway dataset
 A rounded-CPM matrix returns a *subset* of the true gene list: the analysis looks
 successful and quietly loses 78% of the signal.
 
-This is not a criticism of DESeq2, edgeR or limma. They document that they expect raw
-counts and are not built to police provenance. `attest` checks the precondition they
-reasonably assume.
+The same exercise on designs (`validation/compare_design.R`): DESeq2 and edgeR refuse a
+*completely* confounded design, limma-voom fits it and returns NA coefficients with a
+warning. Partial confounding, and two samples per group, are accepted in silence by all
+three.
 
-## What it decides, and how
+This is not a criticism of DESeq2, edgeR or limma. They document that they expect raw
+counts and a full-rank design; they are not built to police provenance. `attest` checks
+the preconditions they reasonably assume.
+
+## The five checks
+
+| Check | The claim it adjudicates | What the tools do about it |
+|---|---|---|
+| `attest_counts()` | "this matrix holds raw counts" | DESeq2 rejects non-integers only; rounding defeats it; edgeR and limma silent |
+| `attest_completeness()` | "this matrix holds every gene the pipeline quantified" | nothing; a gene absent from the matrix is indistinguishable from a gene never expressed |
+| `attest_identity()` | "these samples are who the sample sheet says" | nothing at the count-matrix level |
+| `attest_design()` | "this design can estimate the effect I am asking for" | full-rank refusal only (DESeq2, edgeR); nothing on partial confounding or thin replication |
+| `attest_detectability()` | "this gene did not change" | nothing retrospective; PROPER, ssizeRNA and RNASeqPower are prospective planning tools |
+
+### How each one decides
+
+**Value scale.** Six signals, in order of how conclusive they are:
 
 | Signal | Means |
 |---|---|
 | every column sums to ~1e6 | CPM or TPM |
 | variance below the mean across samples | impossible for counts (Poisson floor); the values were divided by depth and/or gene length |
 | depth already divided out of non-integer values | FPKM/RPKM or similar |
-| median-of-ratios size factors within 1.01x | already normalised |
+| median-of-ratios size factors much flatter than the column sums | already normalised |
 | negatives, or non-integers with a maximum under 30 | log scale (vst, rlog, log-CPM) |
 | regular gaps between small values | scaled and rounded; the gap size recovers the original library size |
 
-Verdicts are `PERMITTED`, `CAUTION`, `NOT PERMITTED` or `UNKNOWN`. `UNKNOWN` means the
-inputs cannot answer the question - never a guess. Checks that could not run are listed
-under `not assessed`, so a `PERMITTED` verdict never hides a check that never happened.
+**Completeness.** A complete matrix keeps genes that are zero in every sample; filtering
+removes exactly those, and the floor it leaves on the row totals reveals the threshold
+that was used. The *fraction* of all-zero genes is useless as a test — it is 47.4% on
+airway, 15.3% on pasilla, 4.0% on fission — so only their presence is used.
 
-Nothing throws. Malformed input returns a typed result with a reason.
+**Identity.** Sex is inferred from expression (XIST against seven Y genes), never from X
+heterozygosity: after X-inactivation a clonal female sample expresses one X, so a
+DNA-style rule calls it male. A duplicate library is flagged when a pair is identical, or
+correlates above 0.999, or sits at least 0.02 above every other pair in the cohort.
+Neither test alone works: yeast replicates reach 0.9955, so a fixed 0.99 floor cries wolf,
+while a true duplicate there is only ~1.5 MAD above the median, so a cohort-relative rule
+alone misses it.
+
+**Design.** Rank first (which coefficients are not estimable, named), then variance
+inflation per coefficient of interest, reported as an effective sample size — 8 samples at
+VIF 1.33 buy the precision of 6 — then group sizes.
+
+**Detectability.** For every gene, the smallest fold change this dataset could have
+detected, from a two-sample negative-binomial Wald calculation using that gene's own mean
+and dispersion, the group sizes, and the level the gene is *really* judged at. That level
+is the Benjamini-Hochberg one, `alpha * R / n`, with R estimated from the counts; using
+Bonferroni instead put the detectable change above 2-fold for every gene in a dataset
+where DESeq2 finds 3,993 differentially expressed ones.
+
+## Faults and scope
+
+The first four checks look for faults: something is wrong with the data or the design, and
+the overall verdict is the worst of them. `detectability` is different — nothing is wrong,
+the experiment is simply as big as it is — so it reports **scope**, printed separately and
+never lowering the overall verdict. FastQC flags that are normal for RNA-seq, MultiQC's
+refusal to give an overall pass, and the limitations section of a clinical report all make
+the same separation.
+
+Verdicts are `PERMITTED`, `CAUTION`, `NOT PERMITTED` or `UNKNOWN`. `UNKNOWN` means the
+inputs cannot answer the question - never a guess. Claims that could not be checked are
+listed under `not assessed`, so a `PERMITTED` verdict never hides a check that never ran.
+
+Nothing throws. Malformed input returns a typed result with a reason. There are no bundled
+annotation databases.
+
+`attest_as_list()` returns the same content as a plain list for `jsonlite::toJSON()` or a
+pipeline step that acts on the verdict.
 
 ## Validation
 
-- **39/39** verdicts correct across airway (human), pasilla (fly) and fission (yeast),
-  13 transformations each: CPM, TPM, FPKM and their rounded forms, log2(CPM+1),
+- **39/39** value-scale verdicts correct across airway (human), pasilla (fly) and fission
+  (yeast), 13 transformations each: CPM, TPM, FPKM and their rounded forms, log2(CPM+1),
   size-factor normalised, estimated counts, downsampling, gene filtering.
 - **0 false alarms** on 180 simulated raw matrices spanning 9 regimes: typical bulk,
   tightly balanced libraries, n = 4, n = 50, shallow 3' (1M and 0.3M reads), sparse UMI
   pseudobulk, and a 60k-gene annotation.
-- **44 assertions** in the test suite, run against 3,000-gene fixtures shipped with the
+- **Detectability calibrated by simulation**: data generated with exactly the fold change
+  the check calls detectable at 80% power was detected 78-84% of the time, at n = 3, 4, 6
+  and 10 per group.
+- **122 assertions** in the test suite, run against 3,000-gene fixtures shipped with the
   package, so the tests need no Bioconductor data packages.
 
-Several rules in the list above replaced earlier ones that real data falsified. The
-design log records each: what was assumed, which dataset broke it, and what replaced it.
+Several rules above replaced earlier ones that real data falsified: an FPKM rule that
+worked on human and failed on fly and yeast, a rounding-lattice rule that does not survive
+20M-read libraries, a size-factor threshold that turned out to be depth-dependent. The
+design log records each one: what was assumed, which dataset broke it, what replaced it.
 
 ## Known limits
 
-- A matrix normalised from shallow libraries (< 1M reads) has rounding noise above the
-  1.01x size-factor threshold and can be missed.
+- A matrix normalised from shallow libraries (< 1M reads) carries rounding noise that can
+  push it past the size-factor test and be read as raw counts.
 - Genuine salmon/kallisto estimates from an unusually even experiment can be reported as
   normalised; the message names that reading and points to `tximport`.
-- Single-cell and UMI matrices are only simulated so far, not tested on real data.
+- Single-cell and UMI matrices are simulated only, not yet tested on real data.
+- Partial confounding is reported as evidence but only lowers the verdict once it has cost
+  more than half the samples; a 25% loss of effective sample size prints under a
+  `PERMITTED` design.
+- Detectability is an approximation to what DESeq2 or edgeR would achieve, not a
+  reimplementation of either; it is calibrated against simulation, not against their output.
+- Sex inference and the DNA-RNA question: the markers are human, and no genotype
+  comparison is attempted. For that, run somalier or NGSCheckMate on the BAMs.
 
 ## Install
 

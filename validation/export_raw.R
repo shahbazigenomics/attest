@@ -1,6 +1,6 @@
 # Exports the raw count matrices of the example datasets so they can be
-# validated outside this machine. Writes to ~/Documents/countsworthy/validation/.
-out <- path.expand("~/Documents/countsworthy/validation")
+# validated outside this machine. Writes to ~/Documents/attest/validation/.
+out <- path.expand("~/Documents/attest/validation")
 dir.create(out, showWarnings = FALSE, recursive = TRUE)
 
 sets <- list()
