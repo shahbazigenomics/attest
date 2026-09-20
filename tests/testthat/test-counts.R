@@ -124,8 +124,7 @@ test_that("completeness distinguishes complete matrices from filtered ones", {
 
   # and the merged report now carries both checks
   rep <- attest(m)
-  expect_equal(length(rep$checks), 3L)
-  expect_true("completeness" %in% names(rep$checks))
+  expect_true(all(c("value scale", "completeness", "identity") %in% names(rep$checks)))
   expect_equal(attest(m[rowSums(m) >= 10, ])$verdict, "CAUTION")  # weakest check wins
 })
 
@@ -160,7 +159,7 @@ test_that("identity infers sex, catches mislabels and duplicate libraries", {
   # non-human data says so instead of guessing
   expect_true(any(grepl("sex check", attest_identity(fx$fission)$not_assessed)))
 
-  expect_equal(length(attest(m)$checks), 3L)
+  expect_true(all(c("value scale", "completeness", "identity") %in% names(attest(m)$checks)))
   expect_equal(attest(m, metadata = md_wrong)$verdict, "NOT PERMITTED")
 })
 
@@ -223,8 +222,8 @@ test_that("design adequacy: estimability, partial confounding, replication", {
   expect_equal(attest_design(m, balanced[1:6, ], ~ batch + cond)$verdict, "UNKNOWN")
 
   # runs inside the report only when a design is supplied
-  expect_equal(length(attest(m)$checks), 3L)
-  expect_equal(length(attest(m, metadata = balanced, design = ~ batch + cond)$checks), 4L)
+  expect_false("design" %in% names(attest(m)$checks))
+  expect_true("design" %in% names(attest(m, metadata = balanced, design = ~ batch + cond)$checks))
   expect_equal(attest(m, metadata = confounded, design = ~ batch + cond)$verdict, "NOT PERMITTED")
 })
 
