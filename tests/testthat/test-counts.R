@@ -118,7 +118,7 @@ test_that("completeness distinguishes complete matrices from filtered ones", {
 
   # gene selection is only assessable when the annotation size is supplied
   expect_true(any(grepl("n_expected", attest_completeness(m)$not_assessed)))
-  sel <- attest_completeness(m[1:20000, ], n_expected = nrow(m))
+  sel <- attest_completeness(m[1:1000, ], n_expected = nrow(m))   # a tenth of the fixture
   expect_equal(sel$verdict, "CAUTION")
 
   # and the merged report now carries both checks
