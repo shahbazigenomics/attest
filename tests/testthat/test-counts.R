@@ -47,7 +47,8 @@ test_that("small panels are judged, not refused, and unrun checks are reported",
   res <- attest_counts(panel)
   expect_equal(res$verdict, "PERMITTED")
   expect_true(length(res$not_assessed) >= 1)          # says which checks could not run
-  expect_true(any(grepl("size factors", res$not_assessed)))
+  # the Poisson-floor check needs 200 expressed genes, so it can never run on 30
+  expect_true(any(grepl("variance/mean", res$not_assessed)))
 
   expect_equal(attest_counts(m[1:5, ])$verdict, "UNKNOWN")   # 5 genes: still too small
 
