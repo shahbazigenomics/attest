@@ -48,6 +48,8 @@ attest_counts <- function(x, tol_1e6 = 0.01, sf_spread_max = 1.01) {
   ev$sf_spread          <- if (all(is.finite(ev$size_factors)))
     max(ev$size_factors) / max(min(ev$size_factors), .Machine$double.eps) else NA_real_
   ev$lattice            <- at_lattice(m)
+  ev$sf_vs_colsum       <- if (is.finite(ev$sf_spread) && ev$col_sum_spread > 1.001)
+    log(ev$sf_spread) / log(ev$col_sum_spread) else NA_real_
   ev$dispersion_index   <- at_dispersion_index(m)
 
   # checks that these inputs cannot answer - reported, never silently skipped
@@ -125,12 +127,27 @@ attest_counts <- function(x, tol_1e6 = 0.01, sf_spread_max = 1.01) {
   }
 
   # --- already normalised --------------------------------------------------
-  if (is.finite(ev$sf_spread) && ev$sf_spread < sf_spread_max) {
+  # Three ways a normalised matrix shows itself. A fixed threshold on the size-factor
+  # spread alone is depth-dependent: rounding noise put the 1M-read airway fixture at
+  # 1.0154 and the 22M-read full matrix at 1.0057. The ratio below is scale-free -
+  # measured 0.003-0.072 for normalised matrices against 1.0-1.3 for raw counts.
+  flat_factors <- is.finite(ev$sf_spread) && ev$sf_spread < sf_spread_max
+  crushed      <- isTRUE(ev$sf_vs_colsum < 0.3) && isTRUE(ev$sf_spread < 1.25)
+  flat_totals  <- ev$col_sum_spread < 1.01
+  if (flat_factors || crushed || flat_totals) {
+    why <- if (flat_totals)
+      sprintf("every sample totals the same to within %.2f%%, which sequencing does not produce: the values were either scaled to a common total (then they are not counts) or the libraries were downsampled to equal depth (then they are counts, but reads were thrown away)",
+              100 * (ev$col_sum_spread - 1))
+    else if (crushed)
+      sprintf("size factors vary only %.3fx while sample totals vary %.2fx; in raw counts the two move together, so a ratio this small means depth was divided out and composition left behind",
+              ev$sf_spread, ev$col_sum_spread)
+    else
+      sprintf("median-of-ratios size factors vary only %.3fx across samples, where raw libraries differ by more even in a tightly balanced run",
+              ev$sf_spread)
     return(at_result(
       "CAUTION",
       "This matrix appears to have been normalised already.",
-      sprintf("size factors differ by only %.3fx across samples; raw libraries, even from a tightly balanced run, differ by more than 1.01x",
-              ev$sf_spread),
+      why,
       "Normalising twice makes samples look more alike than they are, which slightly inflates significance. Use the original counts if you still have them.",
       na, ev))
   }

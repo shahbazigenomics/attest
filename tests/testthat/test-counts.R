@@ -163,3 +163,21 @@ test_that("identity infers sex, catches mislabels and duplicate libraries", {
   expect_equal(length(attest(m)$checks), 3L)
   expect_equal(attest(m, metadata = md_wrong)$verdict, "NOT PERMITTED")
 })
+
+test_that("normalised matrices are caught at any depth, and flat totals are flagged", {
+  f <- system.file("extdata", "fixtures.rds", package = "attest")
+  if (!nzchar(f)) f <- "inst/extdata/fixtures.rds"
+  if (!file.exists(f)) f <- "../../inst/extdata/fixtures.rds"
+  fx <- readRDS(f)
+
+  for (nm in names(fx)) {
+    m <- fx[[nm]]
+    # a fixed size-factor threshold is depth-dependent (1.0057 at 22M reads,
+    # 1.0154 at 1M); the size-factor-to-total ratio is not
+    expect_equal(attest_counts(round(t(t(m) / at_size_factors(m))))$verdict, "CAUTION", info = nm)
+    # scaled to a common total that is not 1e6: not counts, or rarefied
+    expect_equal(attest_counts(round(t(t(m) / colSums(m)) * 5e5))$verdict, "CAUTION", info = nm)
+    # and the same matrix shallower is still raw counts
+    expect_equal(attest_counts(round(m / 40))$verdict, "PERMITTED", info = nm)
+  }
+})
