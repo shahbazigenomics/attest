@@ -68,3 +68,28 @@ test_that("a scale factor is claimed only when samples agree", {
   expect_true(lat$n_agree >= 2)
   expect_null(at_lattice(m)$factor_estimate)          # raw counts: no lattice
 })
+
+test_that("attest() merges checks into one report", {
+  f <- system.file("extdata", "fixtures.rds", package = "attest")
+  if (!nzchar(f)) f <- "inst/extdata/fixtures.rds"
+  if (!file.exists(f)) f <- "../../inst/extdata/fixtures.rds"
+  m <- readRDS(f)$airway
+
+  rep_ok <- attest(m)
+  expect_s3_class(rep_ok, "attest_report")
+  expect_equal(rep_ok$verdict, "PERMITTED")
+  expect_equal(rep_ok$checks[["value scale"]]$verdict, "PERMITTED")
+
+  rep_bad <- attest(round(t(t(m) / colSums(m)) * 1e6))
+  expect_equal(rep_bad$verdict, "NOT PERMITTED")
+
+  # the report is as strong as its weakest check
+  expect_equal(at_worst(c("PERMITTED", "CAUTION")), "CAUTION")
+  expect_equal(at_worst(c("PERMITTED", "UNKNOWN", "NOT PERMITTED")), "NOT PERMITTED")
+  expect_equal(at_worst(c("PERMITTED", "PERMITTED")), "PERMITTED")
+
+  l <- attest_as_list(rep_bad)
+  expect_equal(l$schema, "attest/report/1")
+  expect_equal(l$verdict, "NOT PERMITTED")
+  expect_true(nzchar(l$checks[["value scale"]]$headline))
+})
