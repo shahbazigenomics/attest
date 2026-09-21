@@ -30,7 +30,7 @@
 #'   DGEList. For counts in a file, see [attest_file()].
 #' @param ... passed to individual checks: `n_expected` (completeness),
 #'   `metadata`, `sex_col`, `dup_floor` (identity), `design`, `of_interest`
-#'   (design), `group`, `target_fc`, `power` (detectability), `strandedness`
+#'   (design), `group`, `target_fc`, `power`, `dispersion` (detectability), `strandedness`
 #'   (paths to STAR `ReadsPerGene.out.tab` files or featureCounts output; see
 #'   [attest_strandedness()]).
 #' @return object of class "attest_report".
@@ -38,7 +38,12 @@
 #' fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
 #' md <- data.frame(cell = factor(rep(c("A", "B", "C", "D"), each = 2)),
 #'                  dex  = factor(rep(c("untrt", "trt"), times = 4)))
+#' # the moment estimate keeps this example fast
+#' attest(fx$airway, metadata = md, design = ~ cell + dex, dispersion = "moments")
+#' \donttest{
+#' # the default: DESeq2's own noise estimate for this design, when installed
 #' attest(fx$airway, metadata = md, design = ~ cell + dex)
+#' }
 #'
 #' # a bare matrix: the checks that need a sample sheet are named as not run
 #' attest(fx$airway)
@@ -118,7 +123,7 @@ attest <- function(x, ...) {
       attest_detectability,
       c(list(x), list(group = group, metadata = metadata, design = design,
                       of_interest = args$of_interest),
-        args[names(args) %in% c("power", "alpha", "target_fc")]))
+        args[names(args) %in% c("power", "alpha", "target_fc", "dispersion")]))
   } else {
     not_run <- c(not_run, paste(
       "detectability (for which genes could a change have been seen at all?):",

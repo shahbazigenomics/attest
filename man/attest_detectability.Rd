@@ -12,7 +12,8 @@ attest_detectability(
   alpha = 0.05,
   target_fc = 2,
   design = NULL,
-  of_interest = NULL
+  of_interest = NULL,
+  dispersion = c("auto", "deseq2", "moments")
 )
 }
 \arguments{
@@ -36,10 +37,11 @@ study-level summary. Default 2 (a doubling).}
 tested. When given with \code{metadata}, the calculation uses the design's
 effective sample size - group sizes divided by the variance inflation that
 the other terms put on this effect - so a partly confounded experiment is
-not credited with precision it does not have.
-This check reports \emph{scope}, not a fault: it says what the data can support, so
-it does not lower the overall verdict of \code{\link[=attest]{attest()}}, the way a clinical report
-keeps its limitations section separate from its result.}
+not credited with precision it does not have.}
+
+\item{dispersion}{where the noise estimate comes from: \code{"auto"} (DESeq2's
+own estimates when DESeq2 is installed and the values are integers, else
+the moment estimate), \code{"deseq2"}, or \code{"moments"}.}
 }
 \value{
 object of class "attest_check"; \verb{$measurements$min_detectable_fc} is
@@ -53,24 +55,50 @@ A gene whose detectable change is larger than any effect worth reporting
 cannot support a negative claim, however small its p-value.
 }
 \details{
-The estimate is a two-sample negative-binomial Wald calculation:
-log(FC) = (z_alpha/2 + z_power) * sqrt(2/n * (1/mu + phi))
-The level \code{alpha} is the one a gene is really judged at. Analyses use
-Benjamini-Hochberg, which rejects p <= q*R/n, so the level depends on how many
-genes truly change; R is estimated from these counts with a fast Wald test.
-With no discoveries it falls back to Bonferroni, the conservative answer.
-Using Bonferroni throughout would be badly pessimistic: on airway it put the
-detectable change above 2-fold for every gene, in a dataset where DESeq2 finds
-3,993 differentially expressed ones.
+The question it answers is what the analysis you will run - DESeq2 - could
+have detected. Per gene, the smallest fold change that change in \emph{either}
+direction would reach the given power at the level the gene is judged at:
+log FC = z * sqrt( (1/mu + phi)/n + (FC/mu + phi)/n ),  z = z_alpha/2 + z_power
+The decrease is the harder direction (the lower group has fewer reads), so FC
+appears on both sides and is solved by iteration. A gene averaging too few
+reads has no finite answer: its count can only fall to zero.
+\itemize{
+\item \strong{Noise (phi).} DESeq2's own dispersion estimates, on the design when one
+is given, whenever DESeq2 is installed. On small designs DESeq2 estimates
+dispersion 27-36\% above the truth, and a formula fed the true value
+promises power DESeq2 does not deliver. Without DESeq2, attest's moment
+estimate is used and the report says what that costs. Either way, a given
+design's residuals define the noise: pooling within the compared groups
+counts the donor or cell-line differences a paired design removes.
+\item \strong{Level.} Benjamini-Hochberg rejects p <= q*R/n, so the level depends on
+how many genes truly change; R is estimated from these counts with a fast
+Wald test, Bonferroni as fallback. Bonferroni throughout would be badly
+pessimistic: on airway it put the detectable change above 2-fold for every
+gene, where DESeq2 finds about 4,000.
+}
 
-It is an approximation. \code{validation/detectability_calibration.R} simulates data
-with exactly the claimed effect and measures how often it is actually detected;
-realised power came to 0.78-0.84 against a claim of 0.80 at n = 3, 4, 6 and 10.
+\strong{Calibrated against DESeq2 itself.} \code{validation/detectability_calibration_deseq2.R}
+simulates experiments from DESeq2's fit to airway (paired and unpaired) and to
+Kang 2018 pseudobulk (3, 4, 6 and 8 donors, paired), gives each gene exactly
+its claimed detectable change, and runs DESeq2: a claimed 80\% was detected
+80-85\% of the time (single experiments 78-86\%). With the moment estimate
+instead, 65-78\%. The first version of this check, calibrated only against a
+per-gene \code{glm.nb} test, gave 0.66 against DESeq2 on an unpaired design.
+
+This check reports \emph{scope}, not a fault: it says what the data can support, so
+it does not lower the overall verdict of \code{\link[=attest]{attest()}}, the way a clinical report
+keeps its limitations section separate from its result.
 }
 \examples{
 fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
 dex <- factor(rep(c("untrt", "trt"), times = 4))
-d <- attest_detectability(fx$airway, group = dex)
+d <- attest_detectability(fx$airway, group = dex, dispersion = "moments")
 d
+\donttest{
+# the default: DESeq2's own noise estimate, calibrated against DESeq2
+cell <- factor(rep(c("A", "B", "C", "D"), each = 2))
+attest_detectability(fx$airway, group = dex, metadata = data.frame(cell, dex),
+                     design = ~ cell + dex)
+}
 summary(d$measurements$min_detectable_fc[d$measurements$assessable])
 }

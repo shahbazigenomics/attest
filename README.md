@@ -47,12 +47,14 @@ overall: PERMITTED
 -- what this data can support (does not change the verdict above) --
 
 [detectability] CAUTION - A 2.0-fold change was detectable for under 80% of genes.
-  - of the 716 genes with a mean count of 10 or more, 60% could have shown a 2.0-fold
+  - of the 716 genes with a mean count of 10 or more, 75% could have shown a 2.0-fold
     change at 80% power
-  - among those, the median gene needed 1.9-fold and the quietest quarter 2.4-fold or more
-  - the 838 genes below that count are effectively untestable here (median 65-fold needed)
-  - group sizes 4 and 4; about 49 genes really differ, so Benjamini-Hochberg judges each
-    gene at p < 0.0016 (Bonferroni would be 3.2e-05)
+  - among those, the median gene needed 1.4-fold and the quietest quarter 2.0-fold or more
+  - the 838 genes below that count are effectively untestable here: for most of them no
+    decrease of any size reaches 80% power, because a count this low can only fall to zero
+  - group sizes 4 and 4; about 157 genes really differ, so Benjamini-Hochberg judges each
+    gene at p < 0.0051 (Bonferroni would be 3.2e-05)
+  - noise: DESeq2's own dispersion estimates for ~cell + dex
   cost: A gene absent from your results list is not evidence that it does not respond;
     for genes above their threshold above, it is evidence, and for the rest it is not.
 ```
@@ -233,12 +235,14 @@ at variance inflation 2.5 buy the precision of 3.2 - and charged in detectabilit
 recomputes every gene's detectable change at that size. It does not lower the verdict:
 precision is scope, not a fault.
 
-**Detectability.** For every gene, the smallest fold change this dataset could have
-detected, from a two-sample negative-binomial Wald calculation using that gene's own mean
-and dispersion, the group sizes, and the level the gene is *really* judged at. That level
-is the Benjamini-Hochberg one, `alpha * R / n`, with R estimated from the counts; using
-Bonferroni instead put the detectable change above 2-fold for every gene in a dataset
-where DESeq2 finds 3,993 differentially expressed ones.
+**Detectability.** For every gene, the smallest fold change DESeq2 run on this design could
+have detected - in either direction, at the level the gene is really judged at. The noise is
+DESeq2's own dispersion estimate for your design whenever DESeq2 is installed: on small
+designs DESeq2 estimates dispersion 27-36% above the truth, so a formula fed the true value
+promises power DESeq2 does not deliver. A paired design's blocks are not counted as noise.
+The level is the Benjamini-Hochberg one, `alpha * R / n`, with R estimated from the counts;
+Bonferroni instead put the detectable change above 2-fold for every gene in a dataset where
+DESeq2 finds about 4,000.
 
 ## Faults and scope
 
@@ -269,10 +273,13 @@ pipeline step that acts on the verdict.
 - **0 false alarms** on 180 simulated raw matrices spanning 9 regimes: typical bulk,
   tightly balanced libraries, n = 4, n = 50, shallow 3' (1M and 0.3M reads), sparse UMI
   pseudobulk, and a 60k-gene annotation.
-- **Detectability calibrated by simulation**: data generated with exactly the fold change
-  the check calls detectable at 80% power was detected 78-84% of the time, at n = 3, 4, 6
-  and 10 per group.
-- **281 assertions** in the test suite, run against 3,000-gene fixtures shipped with the
+- **Detectability calibrated against DESeq2 itself** (`validation/detectability_calibration_deseq2.R`):
+  experiments simulated from DESeq2's own fit to airway (paired and unpaired) and to Kang
+  2018 pseudobulk (3-8 donors, paired), each gene given exactly the change attest calls
+  detectable at 80% power, then tested with DESeq2 - detected 80-85% of the time. An
+  earlier version, checked only against a per-gene `glm.nb` test, looked calibrated
+  (78-84%) and gave 66% against DESeq2; the numbers above replaced it.
+- **295 assertions** in the test suite, run against 3,000-gene fixtures shipped with the
   package, so the tests need no Bioconductor data packages.
 
 Several rules above replaced earlier ones that real data falsified: an FPKM rule that
@@ -302,18 +309,12 @@ design log records each one: what was assumed, which dataset broke it, what repl
   conditions (`validation/umi_pseudobulk.R`): every check and every value-scale transform
   correct. Per-cell matrices are out of scope; attest is for the matrix that goes into
   DESeq2 or edgeR.
-- Detectability is conservative on paired and blocked designs. It pools noise within the
-  compared groups, so the donor or cell-line differences the design removes are counted as
-  noise: on airway the median detectable change is reported as 1.82-fold where the design's
-  own residuals give about 1.5 (`validation/detectability_vs_deseq2.R`). It errs towards
-  "could not have been seen", never the other way.
 - A numeric sample-sheet column is tested against two-group comparisons only, and a
   numeric column that is really a batch code (`1, 1, 2, 2, ...`) is treated as a
   number, not as groups; code batches as text to get the nesting test.
-- Detectability's effective sample size charges for confounding but not for the precision
-  a paired or blocked design gains, so for such designs it errs conservative.
-- Detectability is an approximation to what DESeq2 or edgeR would achieve, not a
-  reimplementation of either; it is calibrated against simulation, not against their output.
+- Detectability is calibrated against DESeq2 only. Without DESeq2 installed it falls back
+  to attest's own noise estimate, which DESeq2 would meet 65-78% of the time rather than 80%,
+  and the report says so. edgeR and limma-voom have not been calibrated.
 - Strandedness is calibrated on simulated libraries, not field data. The synthetic genome has
   far more antisense overlap than a real one, so real stranded libraries should separate
   further from 0.5 than these did - but that is an expectation, not yet a measurement.

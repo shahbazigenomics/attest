@@ -12,7 +12,7 @@ DGEList. For counts in a file, see \code{\link[=attest_file]{attest_file()}}.}
 
 \item{...}{passed to individual checks: \code{n_expected} (completeness),
 \code{metadata}, \code{sex_col}, \code{dup_floor} (identity), \code{design}, \code{of_interest}
-(design), \code{group}, \code{target_fc}, \code{power} (detectability), \code{strandedness}
+(design), \code{group}, \code{target_fc}, \code{power}, \code{dispersion} (detectability), \code{strandedness}
 (paths to STAR \code{ReadsPerGene.out.tab} files or featureCounts output; see
 \code{\link[=attest_strandedness]{attest_strandedness()}}).}
 }
@@ -53,7 +53,12 @@ size? (\code{attest_design()}; needs a sample sheet and a design formula)
 fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
 md <- data.frame(cell = factor(rep(c("A", "B", "C", "D"), each = 2)),
                  dex  = factor(rep(c("untrt", "trt"), times = 4)))
+# the moment estimate keeps this example fast
+attest(fx$airway, metadata = md, design = ~ cell + dex, dispersion = "moments")
+\donttest{
+# the default: DESeq2's own noise estimate for this design, when installed
 attest(fx$airway, metadata = md, design = ~ cell + dex)
+}
 
 # a bare matrix: the checks that need a sample sheet are named as not run
 attest(fx$airway)

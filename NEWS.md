@@ -23,3 +23,8 @@ First release.
   `.summary` raises a collapse of assigned reads and otherwise says it cannot
   confirm the strand setting. `attest(x, strandedness = files)` adds it to the
   report, and `attest_file()` picks up the summary beside featureCounts output.
+* Detectability answers what DESeq2 could have detected on this design, and is
+  calibrated against DESeq2 itself: a claimed 80% power was realised 80-85% of
+  the time on paired and unpaired designs from airway and Kang 2018. It uses
+  DESeq2's own dispersion estimates when DESeq2 is installed, measures noise
+  after fitting the design, and takes the harder (decreasing) direction.

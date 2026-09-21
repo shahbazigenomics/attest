@@ -18,9 +18,11 @@ test_that("confounding costs precision, and detectability is where that is charg
   expect_true(any(grepl("treated as", d1$evidence)))
   expect_equal(round(d1$measurements$design_vif, 2), 2.5)
 
-  # a balanced design costs nothing, so nothing changes
+  # a balanced design costs no precision to confounding: no inflation charged
+  # (its noise can still differ - fitting the batch term is the point)
   db <- attest_detectability(m, group = cond8, metadata = balanced, design = ~ batch + cond)
-  expect_equal(db$measurements$min_detectable_fc, d0$measurements$min_detectable_fc)
+  expect_equal(db$measurements$design_vif, 1)
+  expect_false(any(grepl("treated as", db$evidence)))
 
   # an effect the design cannot estimate has no precision to report
   expect_equal(attest_detectability(m, group = cond8, metadata = confounded,
