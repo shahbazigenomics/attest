@@ -9,11 +9,14 @@
 #' @param x numeric matrix (genes x samples), data.frame, or an object carrying
 #'   an assay: SummarizedExperiment / DESeqDataSet / DGEList.
 #' @param tol_1e6 relative tolerance for "column sums pinned at 1e6".
-#' @param sf_spread_max size-factor spread (max/min) below which a matrix looks
-#'   already normalised. Default 1.01, set from simulation: normalised matrices
-#'   (>=1M reads) land at 1.002-1.016, raw counts at >=1.012 even when library
-#'   sizes differ by only 0.5%. Shallow (<1M) normalised matrices can exceed it
-#'   and are missed.
+#' @param sf_spread_max size-factor spread (max/min) below which the size
+#'   factors are reported as flat. Flat size factors are supporting evidence
+#'   only: raw libraries of near-equal depth have them too.
+#' @param aliasing_max jaggedness of the small-value histogram above which a
+#'   sample is taken to have been divided by a factor and rounded. Default 1.5,
+#'   between the most jagged raw matrix measured (0.87; 0.44 over 180 simulated
+#'   ones) and the least jagged rounded normalised matrix (2.93), across three
+#'   species, full and 3,000-gene matrices, 20k to 30M reads per sample.
 #' @return object of class "attest_check": verdict, headline, evidence (text),
 #'   consequence, not_assessed, measurements.
 #' @examples
@@ -22,7 +25,7 @@
 #' m <- fx$airway
 #' attest_counts(round(t(t(m) / colSums(m)) * 1e6)) # rounded CPM
 #' @export
-attest_counts <- function(x, tol_1e6 = 0.01, sf_spread_max = 1.01) {
+attest_counts <- function(x, tol_1e6 = 0.01, sf_spread_max = 1.01, aliasing_max = 1.5) {
 
   m <- at_as_matrix(x)
   if (is.null(m)) {
@@ -56,6 +59,8 @@ attest_counts <- function(x, tol_1e6 = 0.01, sf_spread_max = 1.01) {
   ev$sf_vs_colsum       <- if (is.finite(ev$sf_spread) && ev$col_sum_spread > 1.001)
     log(ev$sf_spread) / log(ev$col_sum_spread) else NA_real_
   ev$dispersion_index   <- at_dispersion_index(m)
+  ev$aliasing          <- at_aliasing(m)
+  ev$aliasing_max      <- if (all(is.na(ev$aliasing))) NA_real_ else max(ev$aliasing, na.rm = TRUE)
 
   # checks that these inputs cannot answer - reported, never silently skipped
   na <- character(0)
@@ -132,27 +137,52 @@ attest_counts <- function(x, tol_1e6 = 0.01, sf_spread_max = 1.01) {
   }
 
   # --- already normalised --------------------------------------------------
-  # Three ways a normalised matrix shows itself. A fixed threshold on the size-factor
-  # spread alone is depth-dependent: rounding noise put the 1M-read airway fixture at
-  # 1.0154 and the 22M-read full matrix at 1.0057. The ratio below is scale-free -
-  # measured 0.003-0.072 for normalised matrices against 1.0-1.3 for raw counts.
+  # Size factors alone cannot tell a normalised matrix from raw libraries of
+  # near-equal depth: in both, the typical gene is level across samples and the
+  # totals differ only through composition. Measured: depth-balanced raw airway
+  # with 20-70% globin reads was called "normalised" by the size-factor rule.
+  # So the verdict needs positive evidence of rescaling: dividing counts by a
+  # factor that is not 1 and rounding leaves the small-value histogram jagged
+  # (aliasing), which sequencing never does. Most jagged sample per matrix,
+  # three species, full and 3,000-gene matrices, 20k-30M reads per sample: raw
+  # at most 0.87, rounded normalised at least 2.93 (validation/depth_sweep.R).
   flat_factors <- is.finite(ev$sf_spread) && ev$sf_spread < sf_spread_max
   crushed      <- isTRUE(ev$sf_vs_colsum < 0.3) && isTRUE(ev$sf_spread < 1.25)
   flat_totals  <- ev$col_sum_spread < 1.01
-  if (flat_factors || crushed || flat_totals) {
-    why <- if (flat_totals)
-      sprintf("every sample totals the same to within %.2f%%, which sequencing does not produce: the values were either scaled to a common total (then they are not counts) or the libraries were downsampled to equal depth (then they are counts, but reads were thrown away)",
-              100 * (ev$col_sum_spread - 1))
-    else if (crushed)
-      sprintf("size factors vary only %.3fx while sample totals vary %.2fx; in raw counts the two move together, so a ratio this small means depth was divided out and composition left behind",
-              ev$sf_spread, ev$col_sum_spread)
-    else
-      sprintf("median-of-ratios size factors vary only %.3fx across samples, where raw libraries differ by more even in a tightly balanced run",
-              ev$sf_spread)
+  rescaled     <- isTRUE(ev$aliasing_max > aliasing_max)
+  if (flat_totals) {
     return(at_result(
       "CAUTION",
       "This matrix appears to have been normalised already.",
-      why,
+      sprintf("every sample totals the same to within %.2f%%, which sequencing does not produce: the values were either scaled to a common total (then they are not counts) or the libraries were downsampled to equal depth (then they are counts, but reads were thrown away)",
+              100 * (ev$col_sum_spread - 1)),
+      "Normalising twice makes samples look more alike than they are, which slightly inflates significance. Use the original counts if you still have them.",
+      na, ev))
+  }
+  unmeasured <- all(is.na(ev$aliasing))
+  if (unmeasured && (flat_factors || crushed)) {
+    # fallback: no sample has enough small values to show rescaling directly,
+    # so flat size factors are all there is - and they have two readings
+    return(at_result(
+      "CAUTION",
+      "This matrix may have been normalised already.",
+      sprintf("size factors vary only %.3fx while sample totals vary %.2fx - what normalisation leaves, but also what raw libraries of near-equal depth show when their totals differ through a few genes (globin in whole blood, for one)",
+              ev$sf_spread, ev$col_sum_spread),
+      "If it was normalised, normalising again makes samples look more alike than they are, which slightly inflates significance. If these are raw counts from balanced libraries, nothing is wrong.",
+      c(na, "rescaling check (the direct evidence of normalisation): no sample has enough small values to judge, so the two readings above cannot be told apart"),
+      ev))
+  }
+  if (rescaled) {
+    worst <- names(which.max(ev$aliasing))
+    return(at_result(
+      "CAUTION",
+      "This matrix appears to have been normalised already.",
+      c(sprintf("the frequencies of small values are jagged in %d of %d samples (worst: %s, %.2f; raw counts measured at most 0.87): each sample was divided by its own factor and rounded, so some whole numbers collect values from two counts and others from none",
+                sum(ev$aliasing > aliasing_max, na.rm = TRUE), ncol(m),
+                if (is.null(worst)) "one sample" else worst, ev$aliasing_max),
+        if (flat_factors || crushed)
+          sprintf("and the median-of-ratios size factors are flat (%.3fx across samples), which is what normalisation leaves",
+                  ev$sf_spread)),
       "Normalising twice makes samples look more alike than they are, which slightly inflates significance. Use the original counts if you still have them.",
       na, ev))
   }
@@ -160,15 +190,41 @@ attest_counts <- function(x, tol_1e6 = 0.01, sf_spread_max = 1.01) {
   at_result(
     "PERMITTED",
     "Consistent with raw counts.",
-    c(if (is.finite(ev$sf_spread))
+    c(if (is.finite(ev$sf_spread) && !(flat_factors || crushed))
         sprintf("all values are whole numbers; sample totals differ %.2fx and size factors %.2fx, as expected when depth has not been divided out",
                 ev$col_sum_spread, ev$sf_spread)
+      else if (is.finite(ev$sf_spread))
+        "all values are whole numbers"
       else
         sprintf("all values are whole numbers and sample totals differ %.2fx, as expected when depth has not been divided out",
                 ev$col_sum_spread),
       if (is.finite(ev$dispersion_index))
-        sprintf("variance/mean is %.2f, above the Poisson floor", ev$dispersion_index)),
+        sprintf("variance/mean is %.2f, above the Poisson floor", ev$dispersion_index),
+      if (flat_factors || crushed)
+        sprintf("size factors are flat (%.3fx) for sample totals that differ %.2fx - what a normalised matrix looks like, but also libraries of near-equal depth whose totals differ through a few genes (globin in whole blood, for one); the small-value histograms show no rescaling, so this reads as the second",
+                ev$sf_spread, ev$col_sum_spread)),
     NULL, na, ev)
+}
+
+# How jagged is each sample's histogram of small values? Counts from sequencing
+# give a smooth, decreasing frequency curve over 1, 2, 3, ...; dividing by a
+# factor other than 1 and rounding sends two counts to some whole numbers and
+# none to others. Measured as the median absolute second difference of
+# log(frequency + 1) over values 1-40 that at least 10 genes hold. NA when a
+# sample has too few small values to judge (very deep, or very few genes).
+at_aliasing <- function(m) {
+  if (any(abs(m - round(m)) > 1e-8)) return(rep(NA_real_, ncol(m)))
+  a <- apply(m, 2, function(v) {
+    v <- v[v > 0 & v <= 40]
+    if (length(v) < 200) return(NA_real_)
+    f <- tabulate(v, 40)
+    k <- which(f >= 10)
+    if (length(k) < 6) return(NA_real_)
+    lf <- log(f[seq(min(k), max(k))] + 1)
+    stats::median(abs(diff(lf, differences = 2)))
+  })
+  if (!is.null(colnames(m))) names(a) <- colnames(m)
+  a
 }
 
 at_consequence <- function() {

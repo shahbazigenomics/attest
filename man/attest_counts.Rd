@@ -4,7 +4,7 @@
 \alias{attest_counts}
 \title{Is this a raw count matrix?}
 \usage{
-attest_counts(x, tol_1e6 = 0.01, sf_spread_max = 1.01)
+attest_counts(x, tol_1e6 = 0.01, sf_spread_max = 1.01, aliasing_max = 1.5)
 }
 \arguments{
 \item{x}{numeric matrix (genes x samples), data.frame, or an object carrying
@@ -12,11 +12,15 @@ an assay: SummarizedExperiment / DESeqDataSet / DGEList.}
 
 \item{tol_1e6}{relative tolerance for "column sums pinned at 1e6".}
 
-\item{sf_spread_max}{size-factor spread (max/min) below which a matrix looks
-already normalised. Default 1.01, set from simulation: normalised matrices
-(>=1M reads) land at 1.002-1.016, raw counts at >=1.012 even when library
-sizes differ by only 0.5\%. Shallow (<1M) normalised matrices can exceed it
-and are missed.}
+\item{sf_spread_max}{size-factor spread (max/min) below which the size
+factors are reported as flat. Flat size factors are supporting evidence
+only: raw libraries of near-equal depth have them too.}
+
+\item{aliasing_max}{jaggedness of the small-value histogram above which a
+sample is taken to have been divided by a factor and rounded. Default 1.5,
+between the most jagged raw matrix measured (0.87; 0.44 over 180 simulated
+ones) and the least jagged rounded normalised matrix (2.93), across three
+species, full and 3,000-gene matrices, 20k to 30M reads per sample.}
 }
 \value{
 object of class "attest_check": verdict, headline, evidence (text),

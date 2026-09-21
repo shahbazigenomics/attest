@@ -12,3 +12,9 @@ First release.
 * Checks: value scale (`attest_counts()`), identifiers (`attest_identifiers()`),
   completeness (`attest_completeness()`), sample identity (`attest_identity()`),
   design (`attest_design()`) and detectability (`attest_detectability()`).
+* "Already normalised" is decided from the rounding artefact that dividing by a
+  size factor leaves in each sample's small-value histogram, not from flat size
+  factors alone, which raw libraries of equal depth also have (whole blood with
+  variable globin was a false alarm under the old rule). The new measure also
+  catches normalised matrices down to 30k reads per sample, where the old one
+  failed below 1M.

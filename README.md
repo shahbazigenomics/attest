@@ -149,7 +149,7 @@ the preconditions they reasonably assume.
 | every column sums to ~1e6 | CPM or TPM |
 | variance below the mean across samples | impossible for counts (Poisson floor); the values were divided by depth and/or gene length |
 | depth already divided out of non-integer values | FPKM/RPKM or similar |
-| median-of-ratios size factors much flatter than the column sums | already normalised |
+| small-value frequencies jagged: some integers collect two counts, some none | each sample was divided by its own factor and rounded: already normalised |
 | negatives, or non-integers with a maximum under 30 | log scale (vst, rlog, log-CPM) |
 | regular gaps between small values | scaled and rounded; the gap size recovers the original library size |
 
@@ -241,13 +241,15 @@ pipeline step that acts on the verdict.
 - **39/39** value-scale verdicts correct across airway (human), pasilla (fly) and fission
   (yeast), 13 transformations each: CPM, TPM, FPKM and their rounded forms, log2(CPM+1),
   size-factor normalised, estimated counts, downsampling, gene filtering.
+- **Depth:** 1,215 thinned real matrices, 30k-10M reads per sample; all correct at 1M and
+  above, no false alarm on raw counts at any depth (see known limits for the one miss).
 - **0 false alarms** on 180 simulated raw matrices spanning 9 regimes: typical bulk,
   tightly balanced libraries, n = 4, n = 50, shallow 3' (1M and 0.3M reads), sparse UMI
   pseudobulk, and a 60k-gene annotation.
 - **Detectability calibrated by simulation**: data generated with exactly the fold change
   the check calls detectable at 80% power was detected 78-84% of the time, at n = 3, 4, 6
   and 10 per group.
-- **122 assertions** in the test suite, run against 3,000-gene fixtures shipped with the
+- **254 assertions** in the test suite, run against 3,000-gene fixtures shipped with the
   package, so the tests need no Bioconductor data packages.
 
 Several rules above replaced earlier ones that real data falsified: an FPKM rule that
@@ -257,8 +259,20 @@ design log records each one: what was assumed, which dataset broke it, what repl
 
 ## Known limits
 
-- A matrix normalised from shallow libraries (< 1M reads) carries rounding noise that can
-  push it past the size-factor test and be read as raw counts.
+- **Depth.** Every value-scale verdict was measured on the full airway, pasilla and fission
+  matrices binomially thinned to 30k-10M reads per sample (1,215 matrices,
+  `validation/depth_sweep.R`): all correct at 1M reads and above, no false alarm on raw
+  counts at any depth. One miss below 1M: FPKM from the 36-sample fission time course is
+  reported as possible estimated counts (CAUTION) rather than NOT PERMITTED, because at that
+  depth FPKM values are count-sized and pass the Poisson floor. The advice it gives - do not
+  use this matrix as counts - is still the right one.
+- **"Already normalised" needs direct evidence.** Flat size factors alone cannot tell a
+  normalised matrix from raw libraries of near-equal depth whose totals differ through a few
+  genes - globin in whole blood is the common case, and the first version of this rule
+  called such raw data normalised. The verdict now requires the rounding artefact that
+  dividing by a size factor leaves in the small-value histogram. Where no sample has enough
+  small values to measure it, the report falls back to the size factors, says the result
+  has two readings, and lists the direct check as not assessed.
 - Genuine salmon/kallisto estimates from an unusually even experiment can be reported as
   normalised; the message names that reading and points to `tximport`.
 - Single-cell and UMI matrices are simulated only, not yet tested on real data.
