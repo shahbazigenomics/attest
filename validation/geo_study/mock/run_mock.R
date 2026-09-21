@@ -43,6 +43,19 @@ ok(row("GSE900010")$truth_value == "depth removed" && row("GSE900010")$v_value =
 ok(row("GSE900011")$truth_value == "log-transformed" && row("GSE900011")$v_value == "NOT PERMITTED", "11 log2 CPM: truth log, attest NOT PERMITTED")
 ok(row("GSE900012")$truth_value == "undetermined", "12 equal depths: truth undetermined, not guessed")
 
+# NCBI answers the annotation request with a bot-check page, already cached
+# from an earlier run: the page is not used, and NCBI Gene's table stands in
+good <- net$annot; net$annot <- NULL
+real <- net$map[[grep("annot\\.tsv\\.gz$", names(net$map), value = TRUE)[1]]]
+for (k in grep("annot\\.tsv\\.gz$", names(net$map), value = TRUE)) net$map[[k]] <- file.path(dirname(real), "captcha.html")
+invisible(file.copy(file.path(dirname(real), "captcha.html"), file.path(study$cache, "ncbi_annotation.tsv.gz"), overwrite = TRUE))
+fb <- get_annot(ncbi_counts_urls("GSE900001")$annot)
+ok(!file.exists(file.path(study$cache, "ncbi_annotation.tsv.gz")) && identical(fb$GeneID, good$GeneID) &&
+   identical(fb$Symbol, good$Symbol) && identical(ifelse(is.na(fb$Ensembl), NA, fb$Ensembl), ifelse(is.na(good$Ensembl) | good$Ensembl == "-", NA, good$Ensembl)),
+   "bot-check page instead of the annotation: not cached, NCBI Gene table used, same genes")
+ok(looks_like_page(file.path(dirname(real), "captcha.html")) && !looks_like_page(real), "a web page is told apart from a data file")
+net$annot <- good
+
 cons <- utils::read.csv(file.path(study$results, "consequence.csv"))
 c2 <- cons[cons$gse == "GSE900002", ]
 ok(nrow(c2) == 1 && c2$de_ncbi_raw > c2$de_author_file, "consequence: CPM file finds fewer DE genes than NCBI raw counts")

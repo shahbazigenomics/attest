@@ -72,14 +72,29 @@ read_tsv_gz <- function(path) {
                     stringsAsFactors = FALSE, na.strings = c("", "NA"))
 }
 
+# column names as NCBI writes them, give or take a leading "#" or byte-order mark
+clean_names <- function(x) sub("^#", "", sub("^\ufeff", "", trimws(x)))
+
 read_annot <- function(path) {
-  a <- read_tsv_gz(path)
+  if (looks_like_page(path)) stop("the annotation download is a web page, not the file")
+  a <- read_tsv_gz(path); names(a) <- clean_names(names(a))
   pick <- function(pat) { h <- grep(pat, names(a), ignore.case = TRUE, value = TRUE); if (length(h)) h[1] else NA }
-  gid <- pick("^GeneID$"); sym <- pick("^Symbol$"); ens <- pick("Ensembl")
-  if (is.na(gid)) stop("annotation has no GeneID column")
+  gid <- pick("^Gene.?ID$"); sym <- pick("^Symbol$"); ens <- pick("Ensembl")
+  if (is.na(gid)) stop("annotation has no GeneID column; columns are: ", paste(utils::head(names(a), 8), collapse = ", "))
   data.frame(GeneID = as.character(a[[gid]]),
              Symbol = if (!is.na(sym)) as.character(a[[sym]]) else NA_character_,
              Ensembl = if (!is.na(ens)) sub("\\.[0-9]+$", "", as.character(a[[ens]])) else NA_character_,
+             stringsAsFactors = FALSE)
+}
+
+# the same three columns from NCBI Gene's own table (static file on the FTP
+# host): used when GEO's annotation file cannot be fetched
+read_gene_info <- function(path) {
+  if (looks_like_page(path)) stop("the gene_info download is a web page, not the file")
+  a <- read_tsv_gz(path); names(a) <- clean_names(names(a))
+  ens <- regmatches(a$dbXrefs, regexpr("Ensembl:ENSG[0-9]+", a$dbXrefs))
+  e <- rep(NA_character_, nrow(a)); e[grepl("Ensembl:ENSG[0-9]+", a$dbXrefs)] <- sub("^Ensembl:", "", ens)
+  data.frame(GeneID = as.character(a$GeneID), Symbol = as.character(a$Symbol), Ensembl = e,
              stringsAsFactors = FALSE)
 }
 

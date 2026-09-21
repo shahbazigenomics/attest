@@ -8,11 +8,17 @@ logmsg <- function(...) {
 series_file <- function(gse) file.path(study$results, "series", paste0(gse, ".rds"))
 cache_dir   <- function(gse) file.path(study$cache, gse)
 
+gene_info_url <- "https://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz"
+
+# GEO's annotation for its counts; NCBI Gene's table if that cannot be fetched
 get_annot <- function(url) {
   if (!is.null(net$annot)) return(net$annot)
-  p <- geo_download(url, file.path(study$cache, "ncbi_annotation.tsv.gz"))
-  net$annot <- read_annot(p)
-  net$annot
+  a <- tryCatch(read_annot(geo_download(url, file.path(study$cache, "ncbi_annotation.tsv.gz"))),
+                error = function(e) { logmsg("GEO annotation unavailable (", conditionMessage(e),
+                                             ") - using NCBI Gene's gene_info instead"); NULL })
+  if (is.null(a)) a <- read_gene_info(geo_download(gene_info_url, file.path(study$cache, "Homo_sapiens.gene_info.gz")))
+  net$annot <- a
+  a
 }
 
 # --- check: every endpoint proves itself on one real series before the run --
@@ -23,21 +29,29 @@ stage_check <- function() {
     logmsg(sprintf("package %-10s %s", p, if (has) "ok" else "MISSING"))
     ok <- ok && has
   }
-  first <- geo_text(eutils_url("esearch", db = "gds", term = study$term, retmax = 5))
-  n <- as.integer(sub(".*<Count>([0-9]+)</Count>.*", "\\1", paste(first, collapse = "")))
+  es <- esearch_info(study$term); n <- es$count
   logmsg("series matching the search: ", n)
+  logmsg("  NCBI read the search as: ", es$translation)
+  if (nzchar(es$warnings)) logmsg("  NCBI warnings: ", es$warnings)
+  base_term <- trimws(sub('"rnaseq counts"\\[Filter\\]\\s*AND', "", study$term))
+  if (!identical(base_term, study$term)) {
+    nb <- esearch_info(base_term)$count
+    logmsg(sprintf("  same search without the counts filter: %s (the filter keeps %.1f%%)", nb, 100 * n / nb))
+    if (!is.na(nb) && n >= nb) { logmsg("  WARNING: the counts filter removes nothing - it is being ignored"); ok <- FALSE }
+  }
   if (is.na(n) || n == 0) {
     logmsg("STOP: the search found nothing. The filter name may have changed; try it at ",
            "https://www.ncbi.nlm.nih.gov/gds and edit study$term in config.R")
     return(invisible(FALSE))
   }
-  ids <- regmatches(paste(first, collapse = ""), gregexpr("(?<=<Id>)[0-9]+(?=</Id>)", paste(first, collapse = ""), perl = TRUE))[[1]]
+  ids <- es$ids
   gse <- paste0("GSE", as.numeric(ids[startsWith(ids, "2")][1]) - 2e8)
   logmsg("test series: ", gse)
   u <- ncbi_counts_urls(gse)
   logmsg("NCBI raw counts: ", u$raw, if (u$from_page) "  (found on the download page)" else "  (constructed - NOT found on the page)")
   sz <- geo_size(u$raw)
   logmsg("  size: ", if (is.na(sz)) "unknown" else sprintf("%.1f MB", sz / 1e6))
+  logmsg("annotation URL: ", u$annot)
   a <- tryCatch(get_annot(u$annot), error = function(e) { logmsg("annotation FAILED: ", conditionMessage(e)); NULL })
   if (!is.null(a)) logmsg(sprintf("annotation: %d genes; %d with Ensembl IDs; %d with symbols", nrow(a),
                                   sum(!is.na(a$Ensembl) & nzchar(a$Ensembl)), sum(!is.na(a$Symbol) & nzchar(a$Symbol))))

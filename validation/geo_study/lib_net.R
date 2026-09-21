@@ -33,19 +33,39 @@ geo_text <- function(url) {
   with_retry(function() { con <- url(url); on.exit(close(con)); readLines(con, warn = FALSE) })
 }
 
+# A downloaded file is only kept if it is what was asked for: NCBI sometimes
+# answers with a web page (a bot check, an error page) and a 200 status.
+# Such a page is never cached - it would be re-read as data on every re-run.
+looks_like_page <- function(path) {
+  b <- readBin(path, "raw", 512)
+  if (!length(b)) return(TRUE)
+  if (grepl("\\.gz$", path)) return(!(length(b) >= 2 && b[1] == as.raw(0x1f) && b[2] == as.raw(0x8b)))
+  if (grepl("\\.xlsx?$", path, ignore.case = TRUE)) return(grepl("^\\s*<", rawToChar(b[b != as.raw(0)]), useBytes = TRUE))
+  grepl("^\\s*<(!doctype|html|\\?xml|head)", rawToChar(b[b != as.raw(0)]), ignore.case = TRUE, useBytes = TRUE)
+}
+
 geo_download <- function(url, dest) {
   dir.create(dirname(dest), recursive = TRUE, showWarnings = FALSE)
-  if (file.exists(dest) && file.size(dest) > 0) return(dest)          # resumable
+  if (file.exists(dest) && file.size(dest) > 0) {                       # resumable
+    if (!looks_like_page(dest)) return(dest)
+    unlink(dest)                                                        # a cached web page: fetch again
+  }
   if (net$mode == "mock") {
     f <- mock_lookup(url)
     if (is.null(f)) stop("mock: no file for ", url)
-    file.copy(f, dest, overwrite = TRUE); return(dest)
+    file.copy(f, dest, overwrite = TRUE)
+    if (looks_like_page(dest)) { unlink(dest); stop("NCBI returned a web page instead of the file: ", url) }
+    return(dest)
   }
-  Sys.sleep(study$sleep)
   tmp <- paste0(dest, ".part")
-  with_retry(function() utils::download.file(url, tmp, mode = "wb", quiet = TRUE))
-  file.rename(tmp, dest)
-  dest
+  for (i in 1:3) {
+    Sys.sleep(study$sleep * i^2)
+    with_retry(function() utils::download.file(url, tmp, mode = "wb", quiet = TRUE))
+    if (!looks_like_page(tmp)) { file.rename(tmp, dest); return(dest) }
+    unlink(tmp)
+    Sys.sleep(5 * i)                                                    # back off before asking again
+  }
+  stop("NCBI returned a web page (bot check or error) instead of the file: ", url)
 }
 
 geo_size <- function(url) {                                            # bytes, NA if unknown
@@ -65,6 +85,18 @@ eutils_url <- function(tool, ...) {
   paste0("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/", tool, ".fcgi?",
          paste(names(q), vapply(q, function(v) utils::URLencode(as.character(v), reserved = TRUE), ""),
                sep = "=", collapse = "&"))
+}
+
+# NCBI's reading of a search: the count, how it translated the term, and any
+# warnings (e.g. a phrase or filter it did not recognise and silently dropped)
+esearch_info <- function(term) {
+  x <- paste(geo_text(eutils_url("esearch", db = "gds", term = term, retmax = 5)), collapse = "")
+  tag <- function(t) { m <- regmatches(x, regexpr(sprintf("<%s>.*?</%s>", t, t), x, perl = TRUE))
+                       if (length(m)) gsub("<[^>]+>", " ", m) else "" }
+  list(count = as.integer(sub(".*<Count>([0-9]+)</Count>.*", "\\1", x)),
+       translation = trimws(tag("QueryTranslation")),
+       warnings = trimws(gsub("\\s+", " ", paste(tag("WarningList"), tag("ErrorList")))),
+       ids = regmatches(x, gregexpr("(?<=<Id>)[0-9]+(?=</Id>)", x, perl = TRUE))[[1]])
 }
 
 # All GDS UIDs for a search. Series UIDs are 2 followed by the zero-padded GSE

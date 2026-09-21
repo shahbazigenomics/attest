@@ -30,8 +30,9 @@ nothing flagged are deleted after auditing); results go to `results/`.
 
 **Run `check` first and read its output.** Three things it tests were written
 from documentation and could not be tried from where the pipeline was built:
-the E-utilities filter `"rnaseq counts"[Filter]`, the links on GEO's download
-page, and the NCBI annotation file's column names. If `check` fails, stop and
+the E-utilities filter `"rnaseq counts"[Filter]` (check prints NCBI's own
+reading of the search and the count without the filter), the links on GEO's
+download page, and the NCBI annotation file. If `check` fails, stop and
 look at its log before running anything else.
 
 ## What it measures
@@ -88,7 +89,10 @@ CPM named `raw_counts`, TPM beside counts, a filtered matrix, htseq summary
 rows with unmatched column names, an Excel file with dates for gene names, a
 flipped sex label, no matrix, single-cell only, no NCBI counts, DESeq2-
 normalised values, log values, and equal depths - and runs every stage.
-All 18 planted outcomes come out as planted.
+It also plants NCBI answering a download with a bot-check web page (as
+happened on the first real run): the page is never cached as data, and the
+annotation falls back to NCBI Gene's `Homo_sapiens.gene_info.gz`.
+All 19 checks come out as planted.
 
 ## Limits to state with the results
 
@@ -100,3 +104,5 @@ All 18 planted outcomes come out as planted.
 - The automatic condition choice for the consequence analysis is a heuristic;
   each case is listed so it can be checked by hand.
 - Human series only, and only those NCBI has processed.
+- If GEO's annotation file cannot be fetched, NCBI Gene's current table is
+  used instead; GeneIDs retired since NCBI's counts were made go unmapped.
