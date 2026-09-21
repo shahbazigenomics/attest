@@ -1,0 +1,53 @@
+# Runs every stage of the study against the mock and checks each planted case.
+# From the attest project root:  Rscript validation/geo_study/mock/run_mock.R
+
+for (f in list.files("R", full.names = TRUE)) source(f)
+for (f in c("config.R", "lib_net.R", "lib_parse.R", "lib_truth.R", "stages.R", "summary.R"))
+  source(file.path("validation/geo_study", f))
+source("validation/geo_study/mock/build_mock.R")
+
+tmp <- file.path(Sys.getenv("GEO_MOCK_DIR", tempdir()), "geo_mock"); unlink(tmp, recursive = TRUE)
+study$cache <- file.path(tmp, "cache"); study$results <- file.path(tmp, "results")
+study$sleep <- 0; study$n_candidates <- 50; study$target_usable <- 50
+dir.create(study$results, recursive = TRUE); dir.create(study$cache, recursive = TRUE)
+net$mode <- "mock"; net$map <- build_mock(file.path(tmp, "web")); net$annot <- NULL
+
+stopifnot(isTRUE(stage_check()))
+stage_run(); stage_consequence(); stage_summary()
+
+res <- setNames(lapply(list.files(file.path(study$results, "series"), full.names = TRUE), readRDS),
+                sub("\\.rds$", "", list.files(file.path(study$results, "series"))))
+f <- rbind_fill(lapply(res, function(r) r$files))
+row <- function(gse, file = NULL) { x <- f[f$gse == gse, ]; if (!is.null(file)) x <- x[x$file == file, ]; x[1, ] }
+fails <- 0
+ok <- function(cond, what) { cat(if (isTRUE(cond)) "ok  " else { fails <<- fails + 1; "FAIL" }, what, "\n") }
+
+ok(res$GSE900001$status == "ok" && row("GSE900001")$v_value == "PERMITTED" && row("GSE900001")$truth_value == "raw counts" &&
+   row("GSE900001")$match_how == "accession", "1 raw counts: attest PERMITTED, truth raw, matched by accession")
+ok(row("GSE900002")$v_value == "NOT PERMITTED" && row("GSE900002")$truth_value == "depth removed" &&
+   row("GSE900002")$labelled_as == "counts" && row("GSE900002")$match_how == "title", "2 CPM named raw_counts: caught, truth depth removed, mislabel, matched by title")
+ok(row("GSE900003", "GSE900003_TPM.txt.gz")$v_value == "NOT PERMITTED" && row("GSE900003", "GSE900003_TPM.txt.gz")$truth_value == "depth removed" &&
+   row("GSE900003", "GSE900003_counts.txt.gz")$truth_value == "raw counts", "3 TPM and counts in one series, titles with other punctuation")
+ok(row("GSE900004")$v_completeness == "CAUTION" && row("GSE900004")$truth_completeness == "filtered", "4 filtered: attest CAUTION, truth filtered")
+ok(sum(res$GSE900004$sex$mismatch) == 1, "4 the flipped sex label is found")
+ok(row("GSE900001")$truth_completeness == "complete", "1 complete matrix: truth complete")
+ok(row("GSE900005")$summary_rows == 5 && row("GSE900005")$v_identifiers == "NOT PERMITTED" && row("GSE900005")$match_how == "correlation" &&
+   row("GSE900005")$n_matched == 8, "5 htseq summary rows found; samples matched by correlation, all 8")
+ok(isTRUE(row("GSE900006")$from_excel) && row("GSE900006")$excel_dates == 3 && row("GSE900006")$truth_value == "raw counts" &&
+   row("GSE900006")$id_system == "symbol or systematic", "6 Excel file: converted, 3 dates found, symbols mapped, truth raw")
+ok(sum(res$GSE900006$sex$mismatch) == 0 && nrow(res$GSE900006$sex) == 16, "6 all 16 female, no mismatch")
+ok(res$GSE900007$status == "no matrix file", "7 raw tar and bigwig only: excluded as no matrix file")
+ok(res$GSE900008$status == "single-cell only", "8 single-cell only: excluded")
+ok(res$GSE900009$status == "no NCBI counts", "9 no NCBI counts: excluded")
+ok(row("GSE900010")$truth_value == "depth removed" && row("GSE900010")$v_value == "CAUTION", "10 DESeq2-normalised: truth depth removed, attest CAUTION")
+ok(row("GSE900011")$truth_value == "log-transformed" && row("GSE900011")$v_value == "NOT PERMITTED", "11 log2 CPM: truth log, attest NOT PERMITTED")
+ok(row("GSE900012")$truth_value == "undetermined", "12 equal depths: truth undetermined, not guessed")
+
+cons <- utils::read.csv(file.path(study$results, "consequence.csv"))
+c2 <- cons[cons$gse == "GSE900002", ]
+ok(nrow(c2) == 1 && c2$de_ncbi_raw > c2$de_author_file, "consequence: CPM file finds fewer DE genes than NCBI raw counts")
+cat(sprintf("     GSE900002: NCBI raw %d DE genes, author CPM file %d, both %d\n", c2$de_ncbi_raw, c2$de_author_file, c2$de_both))
+sm <- readLines(file.path(study$results, "summary.md"))
+ok(any(grepl("Sensitivity", sm)) && any(grepl("Specificity", sm)) && any(grepl("Named as counts but not counts", sm)), "summary.md written with the key tables")
+cat("\n", if (fails) paste(fails, "FAILED") else "ALL PLANTED CASES CORRECT", "\n")
+cat("\n---- summary.md ----\n"); cat(sm, sep = "\n")
