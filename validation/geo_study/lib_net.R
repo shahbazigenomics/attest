@@ -89,14 +89,36 @@ eutils_url <- function(tool, ...) {
 
 # NCBI's reading of a search: the count, how it translated the term, and any
 # warnings (e.g. a phrase or filter it did not recognise and silently dropped)
-esearch_info <- function(term) {
-  x <- paste(geo_text(eutils_url("esearch", db = "gds", term = term, retmax = 5)), collapse = "")
+esearch_info <- function(term, retmax = 5, retstart = 0) {
+  x <- paste(geo_text(eutils_url("esearch", db = "gds", term = term, retmax = retmax, retstart = retstart)), collapse = "")
   tag <- function(t) { m <- regmatches(x, regexpr(sprintf("<%s>.*?</%s>", t, t), x, perl = TRUE))
                        if (length(m)) gsub("<[^>]+>", " ", m) else "" }
   list(count = as.integer(sub(".*<Count>([0-9]+)</Count>.*", "\\1", x)),
        translation = trimws(tag("QueryTranslation")),
        warnings = trimws(gsub("\\s+", " ", paste(tag("WarningList"), tag("ErrorList")))),
        ids = regmatches(x, gregexpr("(?<=<Id>)[0-9]+(?=</Id>)", x, perl = TRUE))[[1]])
+}
+
+# Share of a search's UIDs that are series (UIDs 2xxxxxxxx), from 3 x 200 UIDs
+# at the start, middle and end of the result list
+series_share <- function(term, n) {
+  at <- unique(pmax(0, c(0, floor(n / 2), n - 200)))
+  ids <- unlist(lapply(at, function(s) esearch_info(term, retmax = 200, retstart = s)$ids))
+  if (!length(ids)) return(NA_real_)
+  mean(startsWith(ids, "2") & nchar(ids) == 9)
+}
+
+# Which search defines the sampling frame: the counts filter if NCBI applies
+# it, otherwise term_frame. Decided from counts, never assumed.
+resolve_frame <- function() {
+  f <- esearch_info(study$term)
+  base_term <- trimws(sub('"rnaseq counts"\\[Filter\\]\\s*AND', "", study$term))
+  b <- esearch_info(base_term)
+  filter_works <- !is.na(f$count) && !is.na(b$count) && f$count > 0 && f$count < 0.9 * b$count
+  term <- if (filter_works) study$term else study$term_frame
+  n <- if (filter_works) f$count else esearch_info(term)$count
+  list(term = term, basis = if (filter_works) "NCBI counts filter" else "all human expression-by-sequencing series; NCBI counts checked per series",
+       n = n, filtered = f, unfiltered = b)
 }
 
 # All GDS UIDs for a search. Series UIDs are 2 followed by the zero-padded GSE
@@ -145,5 +167,7 @@ ncbi_counts_urls <- function(gse) {
          "%s/geo/download/?format=file&type=rnaseq_counts&acc=%s&file=%s_raw_counts_GRCh38.p13_NCBI.tsv.gz", base, gse, gse),
        annot = if (length(annot)) annot[1] else sprintf(
          "%s/geo/download/?format=file&type=rnaseq_counts&file=Human.GRCh38.p13.annot.tsv.gz", base),
-       from_page = length(raw) > 0)
+       from_page = length(raw) > 0,
+       # the page itself came back (not a bot check or an error), so a missing link means no counts
+       page_ok = nzchar(page) && grepl(gse, page, fixed = TRUE) && !grepl("recaptcha", page, ignore.case = TRUE))
 }

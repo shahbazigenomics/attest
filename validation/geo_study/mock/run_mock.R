@@ -43,6 +43,21 @@ ok(row("GSE900010")$truth_value == "depth removed" && row("GSE900010")$v_value =
 ok(row("GSE900011")$truth_value == "log-transformed" && row("GSE900011")$v_value == "NOT PERMITTED", "11 log2 CPM: truth log, attest NOT PERMITTED")
 ok(row("GSE900012")$truth_value == "undetermined", "12 equal depths: truth undetermined, not guessed")
 
+# NCBI accepts the counts filter but ignores it (as on the first real run):
+# the frame falls back to all human expression-by-sequencing series
+fr <- resolve_frame(); ok(fr$term == study$term, "counts filter applied by NCBI: frame is the filtered search")
+k <- "re:esearch\\.fcgi\\?db=gds&term=%22Homo"; keep <- net$map[[k]]
+net$map[[k]] <- sub("es_all", "es_ids", keep)
+fr <- resolve_frame(); ok(fr$term == study$term_frame && grepl("per series", fr$basis), "counts filter ignored by NCBI: frame falls back, counts checked per series")
+net$map[[k]] <- keep
+
+# NCBI answers a series' download page with a bot check: not "no NCBI counts",
+# and not saved, so the next run tries it again
+pk <- sprintf("https://www.ncbi.nlm.nih.gov/geo/download/?acc=%s", "GSE900001"); keep <- net$map[[pk]]
+net$map[[pk]] <- file.path(dirname(net$map[[grep("annot\\.tsv\\.gz$", names(net$map), value = TRUE)[1]]]), "captcha.html")
+ok(startsWith(process_series("GSE900001")$status, "unavailable"), "bot check on the download page: 'unavailable' (retried), not 'no NCBI counts'")
+net$map[[pk]] <- keep
+
 # NCBI answers the annotation request with a bot-check page, already cached
 # from an earlier run: the page is not used, and NCBI Gene's table stands in
 good <- net$annot; net$annot <- NULL

@@ -29,26 +29,36 @@ stage_check <- function() {
     logmsg(sprintf("package %-10s %s", p, if (has) "ok" else "MISSING"))
     ok <- ok && has
   }
-  es <- esearch_info(study$term); n <- es$count
-  logmsg("series matching the search: ", n)
-  logmsg("  NCBI read the search as: ", es$translation)
-  if (nzchar(es$warnings)) logmsg("  NCBI warnings: ", es$warnings)
-  base_term <- trimws(sub('"rnaseq counts"\\[Filter\\]\\s*AND', "", study$term))
-  if (!identical(base_term, study$term)) {
-    nb <- esearch_info(base_term)$count
-    logmsg(sprintf("  same search without the counts filter: %s (the filter keeps %.1f%%)", nb, 100 * n / nb))
-    if (!is.na(nb) && n >= nb) { logmsg("  WARNING: the counts filter removes nothing - it is being ignored"); ok <- FALSE }
-  }
+  fr <- resolve_frame()
+  logmsg("counts filter: ", fr$filtered$count, " series; without it: ", fr$unfiltered$count,
+         "  (NCBI read the search as: ", fr$filtered$translation, ")")
+  if (nzchar(fr$filtered$warnings)) logmsg("  NCBI warnings: ", fr$filtered$warnings)
+  for (v in c('"rnaseq counts"[Filter]', 'rnaseq_counts[Filter]', '"rnaseq counts"[All Fields]', 'gse[ETYP]', '"Homo sapiens"[Organism]'))
+    logmsg(sprintf("  probe %-30s %s", v, esearch_info(v)$count))
+  logmsg("sampling frame: ", fr$basis)
+  logmsg("  search: ", fr$term)
+  n <- fr$n
+  logmsg("  entries in the frame: ", n)
   if (is.na(n) || n == 0) {
-    logmsg("STOP: the search found nothing. The filter name may have changed; try it at ",
-           "https://www.ncbi.nlm.nih.gov/gds and edit study$term in config.R")
+    logmsg("STOP: the frame search found nothing - try it at https://www.ncbi.nlm.nih.gov/gds and edit config.R")
     return(invisible(FALSE))
   }
-  ids <- es$ids
-  gse <- paste0("GSE", as.numeric(ids[startsWith(ids, "2")][1]) - 2e8)
+  sh <- series_share(fr$term, n)
+  logmsg(sprintf("  share of entries that are series (600 UIDs from start, middle, end): %.1f%%", 100 * sh))
+  if (is.na(sh) || sh < 0.95) { logmsg("  WARNING: the frame is not series only - the entry-type restriction is not applied"); ok <- FALSE }
+  ids <- esearch_info(fr$term, retmax = 50)$ids
+  cand <- paste0("GSE", as.numeric(ids[startsWith(ids, "2")]) - 2e8)
+  gse <- NA; tried <- 0
+  for (g in utils::head(cand, 15)) {                  # first series in the frame that NCBI has counts for
+    tried <- tried + 1; u <- ncbi_counts_urls(g)
+    if (u$from_page) { gse <- g; break }
+  }
+  logmsg(sprintf("  series with NCBI counts among the first %d tried: %s", tried, if (is.na(gse)) "none" else "yes"))
+  if (is.na(gse)) { logmsg("CHECK FAILED - no NCBI counts found for any tried series; paste this log to Claude"); return(invisible(FALSE)) }
   logmsg("test series: ", gse)
-  u <- ncbi_counts_urls(gse)
-  logmsg("NCBI raw counts: ", u$raw, if (u$from_page) "  (found on the download page)" else "  (constructed - NOT found on the page)")
+  logmsg("NCBI raw counts: ", u$raw, "  (found on the download page)")
+  logmsg("  download page recognised as served: ", if (u$page_ok) "yes" else "NO - series would all be retried, never classified")
+  ok <- ok && u$page_ok
   sz <- geo_size(u$raw)
   logmsg("  size: ", if (is.na(sz)) "unknown" else sprintf("%.1f MB", sz / 1e6))
   logmsg("annotation URL: ", u$annot)
@@ -69,13 +79,15 @@ stage_check <- function() {
 stage_sample <- function() {
   f <- file.path(study$results, "sample.csv")
   if (file.exists(f)) return(utils::read.csv(f, stringsAsFactors = FALSE))
-  all <- esearch_gse(study$term)
+  fr <- resolve_frame()
+  logmsg("sampling frame: ", fr$basis, " - ", fr$term)
+  all <- esearch_gse(fr$term)
   logmsg("series available: ", length(all))
   set.seed(study$seed)
   s <- data.frame(order = seq_len(min(study$n_candidates, length(all))),
                   gse = sample(all, min(study$n_candidates, length(all))), stringsAsFactors = FALSE)
   utils::write.csv(s, f, row.names = FALSE)
-  utils::write.csv(data.frame(n_available = length(all), term = study$term, seed = study$seed,
+  utils::write.csv(data.frame(n_available = length(all), term = fr$term, basis = fr$basis, seed = study$seed,
                               drawn = nrow(s), date = as.character(Sys.Date())),
                    file.path(study$results, "sample_frame.csv"), row.names = FALSE)
   s
@@ -85,9 +97,13 @@ stage_sample <- function() {
 process_series <- function(gse) {
   out <- list(gse = gse, status = "ok", files = NULL, sex = NULL, note = character(0))
   u <- ncbi_counts_urls(gse)
+  # "no NCBI counts" only when NCBI's own download page says so; a page or file
+  # that could not be fetched is a transient failure, not saved, retried next run
+  if (!u$page_ok)   { out$status <- "unavailable: download page not served"; return(out) }
+  if (!u$from_page) { out$status <- "no NCBI counts"; return(out) }
   R <- tryCatch(read_ncbi_counts(geo_download(u$raw, file.path(cache_dir(gse), "ncbi_raw.tsv.gz"))),
-                error = function(e) NULL)
-  if (is.null(R)) { out$status <- "no NCBI counts"; return(out) }
+                error = function(e) conditionMessage(e))
+  if (is.character(R)) { out$status <- paste("unavailable:", R); return(out) }
   annot <- get_annot(u$annot)
   out$n_gsm_ncbi <- ncol(R)
 
@@ -177,7 +193,7 @@ stage_run <- function(limit = Inf) {
       logmsg("processing ", gse)
       r <- tryCatch(process_series(gse), error = function(e)
         list(gse = gse, status = paste("error:", conditionMessage(e))))
-      saveRDS(r, f)
+      if (!startsWith(r$status, "unavailable")) saveRDS(r, f)          # transient: retried on the next run
       logmsg(sprintf("  %s: %s%s", gse, r$status,
                      if (!is.null(r$files)) sprintf(", %d file(s) audited", sum(r$files$status == "audited", na.rm = TRUE)) else ""))
       r

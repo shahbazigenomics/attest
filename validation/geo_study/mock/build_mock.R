@@ -54,7 +54,7 @@ build_mock <- function(dir, raw_rds = "validation/raw_matrices.rds",
     page <- if (ncbi_counts) c("<html><body>",
       sprintf('<a href="/geo/download/?type=rnaseq_counts&amp;acc=%s&amp;format=file&amp;file=%s_raw_counts_GRCh38.p13_NCBI.tsv.gz">raw counts</a>', gse, gse),
       '<a href="/geo/download/?type=rnaseq_counts&amp;format=file&amp;file=Human.GRCh38.p13.annot.tsv.gz">annotation</a>',
-      "</body></html>") else c("<html><body>no counts</body></html>")
+      "</body></html>") else sprintf("<html><body>Download %s: %s_RAW.tar (http)</body></html>", gse, gse)
     writeLines(page, file.path(d, "page.html")); put(sprintf("%s/geo/download/?acc=%s", ncbi, gse), file.path(d, "page.html"))
     if (ncbi_counts) {
       colnames(R) <- gsm
@@ -164,6 +164,6 @@ build_mock <- function(dir, raw_rds = "validation/raw_matrices.rds",
   # what NCBI sometimes sends instead of a file: a bot-check page
   writeLines("<!doctype html><html><head><base href=\"https://www.google.com/recaptcha/challengepage/\"></head></html>", P("captcha.html"))
   map[["re:esearch\\.fcgi.*retmax=0&"]] <- P("es_count.xml")
-  map[["re:esearch\\.fcgi.*retmax=(5|10000)"]] <- P("es_ids.xml")
+  map[["re:esearch\\.fcgi.*retmax=(5|200|10000)"]] <- P("es_ids.xml")
   map
 }

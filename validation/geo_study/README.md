@@ -37,12 +37,21 @@ look at its log before running anything else.
 
 ## What it measures
 
-**Sample.** All human GEO series with NCBI-generated raw counts, from
-E-utilities; 400 drawn at random with a fixed seed, processed in that order
-until 200 have an auditable author matrix. The sampling frame (count, search
-term, seed, date) is saved. Every series that drops out is counted with its
-reason: no NCBI counts, no matrix-like supplementary file, single-cell only,
-file too large (> 50 MB), unreadable, samples not matched.
+**Sample.** The documented E-utilities filter for series with NCBI-generated
+counts is tried first. On the first real run NCBI accepted it and ignored it
+(identical counts with and without), so `check` and `sample` decide from
+counts, not assumption: if the filter does not cut the search, the frame is
+all human series of type "expression profiling by high throughput
+sequencing", and whether NCBI has counts is read from each series' own
+download page ("no NCBI counts" is then an exclusion with a reported rate).
+`check` also confirms that >= 95% of the frame's entries are series, not
+samples or platforms. 2000 series are drawn at random with a fixed seed and
+processed in that order until 200 have an auditable author matrix. The frame
+(search, basis, count, seed, date) is saved. Every series that drops out is
+counted with its reason: no NCBI counts, no matrix-like supplementary file,
+single-cell only, file too large (> 50 MB), unreadable, samples not matched.
+A download page or file NCBI would not serve (bot check, error) is not an
+exclusion: it is not saved and is tried again on the next run.
 
 **Author files.** Up to three per series: supplementary `.txt/.tsv/.csv(.gz)`
 or `.xlsx` that are not archives, tracks, single-cell or binary. Each is noted
@@ -91,8 +100,10 @@ flipped sex label, no matrix, single-cell only, no NCBI counts, DESeq2-
 normalised values, log values, and equal depths - and runs every stage.
 It also plants NCBI answering a download with a bot-check web page (as
 happened on the first real run): the page is never cached as data, and the
-annotation falls back to NCBI Gene's `Homo_sapiens.gene_info.gz`.
-All 19 checks come out as planted.
+annotation falls back to NCBI Gene's `Homo_sapiens.gene_info.gz`; NCBI
+ignoring the counts filter (the frame falls back); and a bot check on a
+series' download page (retried, not counted as "no NCBI counts").
+All 22 checks come out as planted.
 
 ## Limits to state with the results
 
