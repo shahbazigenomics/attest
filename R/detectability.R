@@ -161,7 +161,7 @@ attest_detectability <- function(x, group = NULL, metadata = NULL, power = 0.8,
           "for genes above their threshold above, it is evidence, and for the rest it is not.",
           "attest_detectability(x, group)$measurements$min_detectable_fc gives the per-gene number,",
           "which is what a negative claim about a named gene has to quote."),
-    "the estimate is a negative-binomial Wald approximation with method-of-moments dispersion; validation/detectability_calibration.R measures how close the claimed 80% power comes to DESeq2 in simulation",
+    "the estimate is a negative-binomial Wald approximation with method-of-moments dispersion; calibrated by simulation against an independent negative-binomial test (realised power 0.78-0.84 for a claimed 0.80), not yet against DESeq2 itself; on paired or blocked designs it is conservative, because noise is pooled within the compared groups",
     ev, kind = "scope")
 }
 
