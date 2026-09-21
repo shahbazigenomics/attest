@@ -1,2 +1,8 @@
-^countsworthy\.Rproj$
+^attest\.Rproj$
+^.*\.Rproj$
 ^\.Rproj\.user$
+^validation$
+^run_tests\.R$
+^README\.md$
+^cran-comments\.md$
+^\.github$

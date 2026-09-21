@@ -10,7 +10,9 @@ attest_detectability(
   metadata = NULL,
   power = 0.8,
   alpha = 0.05,
-  target_fc = 2
+  target_fc = 2,
+  design = NULL,
+  of_interest = NULL
 )
 }
 \arguments{
@@ -28,7 +30,13 @@ the two groups being compared, or the name of a column in \code{metadata}.}
 Default 0.05.}
 
 \item{target_fc}{the effect size the study cares about, used for the
-study-level summary. Default 2 (a doubling).
+study-level summary. Default 2 (a doubling).}
+
+\item{design, of_interest}{optional design formula and the variable being
+tested. When given with \code{metadata}, the calculation uses the design's
+effective sample size - group sizes divided by the variance inflation that
+the other terms put on this effect - so a partly confounded experiment is
+not credited with precision it does not have.
 This check reports \emph{scope}, not a fault: it says what the data can support, so
 it does not lower the overall verdict of \code{\link[=attest]{attest()}}, the way a clinical report
 keeps its limitations section separate from its result.}
@@ -58,4 +66,11 @@ detectable change above 2-fold for every gene, in a dataset where DESeq2 finds
 It is an approximation. \code{validation/detectability_calibration.R} simulates data
 with exactly the claimed effect and measures how often it is actually detected;
 realised power came to 0.78-0.84 against a claim of 0.80 at n = 3, 4, 6 and 10.
+}
+\examples{
+fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
+dex <- factor(rep(c("untrt", "trt"), times = 4))
+d <- attest_detectability(fx$airway, group = dex)
+d
+summary(d$measurements$min_detectable_fc[d$measurements$assessable])
 }

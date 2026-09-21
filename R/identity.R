@@ -21,6 +21,12 @@
 #'   0.99. Measured: airway replicates reach 0.941, pasilla 0.984, fission 0.9955;
 #'   a resequenced library reaches 0.997-0.9999 and an exact copy 1.
 #' @return object of class "attest_check".
+#' @examples
+#' fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
+#' m <- fx$airway
+#' attest_identity(m)
+#' # the same library present twice
+#' attest_identity(cbind(m, copy = m[, 1]))
 #' @export
 attest_identity <- function(x, metadata = NULL, sex_col = NULL, dup_floor = 0.999) {
 
@@ -33,7 +39,8 @@ attest_identity <- function(x, metadata = NULL, sex_col = NULL, dup_floor = 0.99
     return(at_result("UNKNOWN", "Sample identity needs at least 2 samples.",
                      character(0), NULL, character(0), list(dim = dim(m))))
   }
-  if (is.null(metadata) && !is.null(attr(x, "class")) && isS4(x)) {
+  if (is.null(metadata) && methods::is(x, "SummarizedExperiment") &&
+      requireNamespace("SummarizedExperiment", quietly = TRUE)) {
     metadata <- tryCatch(as.data.frame(SummarizedExperiment::colData(x)),
                          error = function(e) NULL)
   }

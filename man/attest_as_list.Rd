@@ -13,3 +13,7 @@ attest_as_list(x)
 The same content as the printed report, shaped for \code{jsonlite::toJSON()} or
 for a pipeline step that acts on the verdict.
 }
+\examples{
+fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
+str(attest_as_list(attest(fx$pasilla)), max.level = 2)
+}

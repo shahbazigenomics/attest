@@ -30,3 +30,9 @@ the evidence behind it, and any check that could not be run on these inputs.
 \details{
 The function never stops on bad input; it returns a typed failure instead.
 }
+\examples{
+fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
+attest_counts(fx$airway)                       # raw counts
+m <- fx$airway
+attest_counts(round(t(t(m) / colSums(m)) * 1e6)) # rounded CPM
+}

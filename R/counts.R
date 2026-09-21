@@ -16,6 +16,11 @@
 #'   and are missed.
 #' @return object of class "attest_check": verdict, headline, evidence (text),
 #'   consequence, not_assessed, measurements.
+#' @examples
+#' fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
+#' attest_counts(fx$airway)                       # raw counts
+#' m <- fx$airway
+#' attest_counts(round(t(t(m) / colSums(m)) * 1e6)) # rounded CPM
 #' @export
 attest_counts <- function(x, tol_1e6 = 0.01, sf_spread_max = 1.01) {
 
@@ -179,7 +184,8 @@ at_as_matrix <- function(x) {
   } else if (is.data.frame(x)) {
     num <- vapply(x, is.numeric, logical(1))
     if (any(num)) m <- as.matrix(x[, num, drop = FALSE])
-  } else if (methods::is(x, "SummarizedExperiment")) {
+  } else if (methods::is(x, "SummarizedExperiment") &&
+             requireNamespace("SummarizedExperiment", quietly = TRUE)) {
     # DESeqDataSet and RangedSummarizedExperiment inherit from this. is() follows
     # inheritance; existsMethod("assay", class(x)) - the first version - does
     # not, so every real DESeqDataSet came back unreadable.

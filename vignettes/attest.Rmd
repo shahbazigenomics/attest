@@ -1,0 +1,96 @@
+---
+title: "Auditing a count matrix before differential expression"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Auditing a count matrix before differential expression}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+DESeq2, edgeR and limma-voom assume raw counts and a design that can estimate
+the effect being tested. They check very little of either. A matrix of CPM
+values rounded to whole numbers passes DESeq2 with a routine message and edgeR
+and limma in silence; on the airway dataset, that input returns 877
+differentially expressed genes where the raw counts give 3,993. `attest` checks
+those preconditions before the analysis runs.
+
+It does not analyse expression. Each check adjudicates one claim and reports a
+verdict, the evidence for it, and what the inputs could not answer.
+
+```{r}
+library(attest)
+fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
+m  <- fx$airway            # 3,000 genes x 8 samples, raw counts
+```
+
+## One call
+
+```{r}
+md <- data.frame(cell = factor(rep(c("N61311", "N052611", "N080611", "N061011"), each = 2)),
+                 dex  = factor(rep(c("untrt", "trt"), times = 4), levels = c("untrt", "trt")))
+attest(m, metadata = md, design = ~ cell + dex)
+```
+
+The overall verdict comes from the checks that look for faults. Detectability is
+printed separately: it says how large a change each gene could have shown, which
+is a statement about the size of the experiment, not a defect in it.
+
+With a `DESeqDataSet`, the sample sheet and design come from the object, so
+`attest(dds)` is the whole call. A check that has nothing to work on is named
+under "not run" rather than left out:
+
+```{r}
+attest(m)
+```
+
+## A matrix that is not counts
+
+```{r}
+cpm <- round(t(t(m) / colSums(m)) * 1e6)
+attest_counts(cpm)
+```
+
+## Rows that are not genes
+
+htseq-count and STAR write their totals into the count table. Left in, they are
+analysed as genes:
+
+```{r}
+attest_identifiers(rbind(m, "__no_feature" = round(colSums(m) * 0.1)))
+```
+
+## A column the design leaves out
+
+Two libraries per donor, analysed as four independent replicates per group:
+
+```{r}
+cond  <- factor(rep(c("ctrl", "trt"), each = 4))
+donor <- data.frame(cond = cond, donor = rep(paste0("d", 1:4), each = 2))
+attest_design(m, donor, ~ cond)
+```
+
+## Counts still in a file
+
+```{r}
+p <- tempfile(fileext = ".txt")
+out <- data.frame(Geneid = rownames(m)[1:500], Chr = "1", Start = 1:500, End = 501:1000,
+                  Strand = "+", Length = 1000L, m[1:500, ], check.names = FALSE)
+writeLines(c("# Program:featureCounts", paste(names(out), collapse = "\t")), p)
+utils::write.table(out, p, sep = "\t", quote = FALSE, row.names = FALSE,
+                   col.names = FALSE, append = TRUE)
+attest_file(p)$checks$input
+```
+
+`Start`, `End` and `Length` are numeric. Built into a matrix by hand, they are
+three extra "libraries", and every check on that matrix still passes; the
+column names in the file are the only evidence.
+
+## Machine-readable output
+
+```{r}
+str(attest_as_list(attest(m))$checks[["value scale"]], max.level = 1)
+```

@@ -34,8 +34,15 @@ What it handles, each one reported rather than done silently:
 \item the gene identifier column, whether it is named (\code{Geneid}, \code{gene_id}, ...),
 unnamed, or already the row names
 \item featureCounts' annotation columns - \code{Chr}, \code{Start}, \code{End}, \code{Strand},
-\code{Length} - which are numeric and are otherwise read as five extra samples,
-a mistake no check on the matrix can see afterwards
+\code{Length}. Three of them are numeric and would otherwise be read as three
+extra samples, a mistake no check on the matrix can see afterwards
 \item duplicated gene identifiers
 }
+}
+\examples{
+fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
+p <- tempfile(fileext = ".tsv")
+utils::write.table(data.frame(Geneid = rownames(fx$pasilla), fx$pasilla),
+                   p, sep = "\t", quote = FALSE, row.names = FALSE)
+attest_file(p)
 }

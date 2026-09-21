@@ -13,8 +13,8 @@
 #' * the gene identifier column, whether it is named (`Geneid`, `gene_id`, ...),
 #'   unnamed, or already the row names
 #' * featureCounts' annotation columns - `Chr`, `Start`, `End`, `Strand`,
-#'   `Length` - which are numeric and are otherwise read as five extra samples,
-#'   a mistake no check on the matrix can see afterwards
+#'   `Length`. Three of them are numeric and would otherwise be read as three
+#'   extra samples, a mistake no check on the matrix can see afterwards
 #' * duplicated gene identifiers
 #'
 #' @param path path to the file. `.gz` is read directly.
@@ -23,6 +23,12 @@
 #'   and the rest.
 #' @return object of class "attest_report", whose first check, `input`, says how
 #'   the file was read.
+#' @examples
+#' fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
+#' p <- tempfile(fileext = ".tsv")
+#' utils::write.table(data.frame(Geneid = rownames(fx$pasilla), fx$pasilla),
+#'                    p, sep = "\t", quote = FALSE, row.names = FALSE)
+#' attest_file(p)
 #' @export
 attest_file <- function(path, sep = NULL, ...) {
   read <- at_read_counts(path, sep)

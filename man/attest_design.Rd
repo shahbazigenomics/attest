@@ -4,13 +4,7 @@
 \alias{attest_design}
 \title{Can this design support the comparison you want?}
 \usage{
-attest_design(
-  x,
-  metadata,
-  design,
-  of_interest = NULL,
-  min_effective_frac = 0.5
-)
+attest_design(x, metadata, design, of_interest = NULL)
 }
 \arguments{
 \item{x}{counts: matrix, data.frame, SummarizedExperiment, DESeqDataSet or
@@ -22,22 +16,40 @@ DGEList. Used for the sample count and names.}
 
 \item{of_interest}{name of the variable whose effect you care about. Defaults
 to the last term in \code{design}.}
-
-\item{min_effective_frac}{fraction of the samples the effect of interest must
-still be worth after confounding. Default 0.5: below that, half the
-experiment has been spent on separating the effect from the other terms.}
 }
 \value{
 object of class "attest_check".
 }
 \description{
-Adjudicates the claim "this design can estimate the effect I am asking for".
-Three questions: is every coefficient estimable, how much of the effect of
-interest is shared with the other terms, and are there enough replicates.
+Adjudicates the claim "this design can estimate the effect I am asking for,
+and nothing in the sample sheet stands in its way". Four questions:
 }
 \details{
-DESeq2 and edgeR already refuse a design that is \emph{completely} confounded (the
-model matrix is not full rank) and limma-voom only warns. None of them says
-anything about partial confounding or thin replication, which is what this
-check is for.
+\enumerate{
+\item Is every coefficient estimable? (fault)
+\item Is every group replicated? (fault)
+\item Does a column the formula leaves out line up with the effect? (fault) -
+every treated sample processed in one batch, or several libraries from
+each donor counted as independent replicates. No differential-expression
+tool sees this, because each looks only at the terms it was given.
+\item How much of the effect is shared with the other terms? Reported as an
+effective sample size. This is \strong{scope}, not a fault: the effect is still
+estimated without bias, only less precisely, so it does not lower the
+verdict - it is carried into \code{\link[=attest_detectability]{attest_detectability()}}, which is where
+precision is judged.
+}
+
+DESeq2 and edgeR already refuse a design whose own terms are completely
+confounded; limma-voom only warns. None of them looks at the sample sheet
+beyond the formula. BatchQC measures confounding between a batch and the
+condition, but only for a batch column the user has already named - which is
+the step that fails when nobody noticed there was one. This scans every column.
+}
+\examples{
+fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
+cond <- factor(rep(c("ctrl", "trt"), each = 4))
+attest_design(fx$airway, data.frame(cond = cond), ~ cond)
+# two libraries per donor, analysed as independent replicates
+donor <- data.frame(cond = cond, donor = rep(paste0("d", 1:4), each = 2))
+attest_design(fx$airway, donor, ~ cond)
 }

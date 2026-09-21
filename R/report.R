@@ -32,6 +32,14 @@
 #'   `metadata`, `sex_col`, `dup_floor` (identity), `design`, `of_interest`
 #'   (design), `group`, `target_fc`, `power` (detectability).
 #' @return object of class "attest_report".
+#' @examples
+#' fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
+#' md <- data.frame(cell = factor(rep(c("A", "B", "C", "D"), each = 2)),
+#'                  dex  = factor(rep(c("untrt", "trt"), times = 4)))
+#' attest(fx$airway, metadata = md, design = ~ cell + dex)
+#'
+#' # a bare matrix: the checks that need a sample sheet are named as not run
+#' attest(fx$airway)
 #' @export
 attest <- function(x, ...) {
   args <- list(...)
@@ -151,6 +159,9 @@ print.attest_report <- function(x, ...) {
 #' for a pipeline step that acts on the verdict.
 #'
 #' @param x an "attest_report" or a single check.
+#' @examples
+#' fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
+#' str(attest_as_list(attest(fx$pasilla)), max.level = 2)
 #' @export
 attest_as_list <- function(x) {
   if (inherits(x, "attest_check")) x <- structure(

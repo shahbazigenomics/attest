@@ -1,16 +1,26 @@
 Package: attest
-Title: Check Whether Expression Data Can Support the Claims Made From It
-Version: 0.0.0.9000
+Title: Check Whether RNA-Seq Count Data Can Support the Analysis Run on It
+Version: 0.1.0
 Authors@R: person("Amir", "Shahbazi", email = "amirshahbazi580@gmail.com", role = c("aut", "cre"))
-Description: Audits an RNA-seq count matrix before differential expression.
-    It does not analyse expression; it adjudicates whether the data can
-    support the analysis about to be run on it, reporting a verdict, the
-    evidence behind it, and any check the inputs could not answer.
+Description: Audits an RNA-seq count matrix, its sample sheet and its design
+    before differential expression analysis with tools such as 'DESeq2',
+    'edgeR' or 'limma'. It does not analyse expression. Each check
+    adjudicates one claim - that the values are raw counts rather than CPM,
+    TPM or normalised values; that every row is a gene named once; that the
+    matrix has not been filtered upstream; that samples match their labels;
+    that the design can estimate the effect of interest and that no sample
+    sheet column left out of the formula lines up with it - and returns a
+    verdict, the evidence behind it, and the checks the inputs could not
+    answer. A separate scope report states, per gene, the smallest fold
+    change the data could have detected.
 License: MIT + file LICENSE
+Language: en-GB
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
+Depends: R (>= 3.5.0)
 Imports: methods, stats, utils
-Suggests: testthat (>= 3.0.0), SummarizedExperiment, DESeq2, edgeR
+Suggests: testthat (>= 3.0.0), knitr, rmarkdown, SummarizedExperiment, DESeq2, edgeR
+VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.0

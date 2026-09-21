@@ -24,8 +24,10 @@ at_from_object <- function(x) {
   if (!isS4(x)) return(out)
 
   # --- SummarizedExperiment / DESeqDataSet ---------------------------------
-  cd <- tryCatch(as.data.frame(SummarizedExperiment::colData(x)),
-                 error = function(e) NULL)
+  cd <- if (methods::is(x, "SummarizedExperiment") &&
+            requireNamespace("SummarizedExperiment", quietly = TRUE))
+    tryCatch(as.data.frame(SummarizedExperiment::colData(x)), error = function(e) NULL)
+  else NULL
   if (!is.null(cd) && nrow(cd)) out$metadata <- cd
 
   d <- tryCatch(x@design, error = function(e) NULL)      # DESeqDataSet slot

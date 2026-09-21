@@ -15,6 +15,10 @@
 #'   given, a much smaller matrix is reported as evidence of gene selection
 #'   (e.g. protein-coding only).
 #' @return object of class "attest_check".
+#' @examples
+#' fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
+#' attest_completeness(fx$fission)
+#' attest_completeness(fx$fission[rowSums(fx$fission) >= 10, ])   # filtered upstream
 #' @export
 attest_completeness <- function(x, n_expected = NULL) {
 

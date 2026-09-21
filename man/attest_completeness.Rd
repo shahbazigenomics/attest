@@ -28,3 +28,8 @@ Fractions of all-zero genes are strongly species-dependent (airway 47.4\%,
 pasilla 15.3\%, fission 4.0\%), so the test is their presence, never their
 proportion.
 }
+\examples{
+fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
+attest_completeness(fx$fission)
+attest_completeness(fx$fission[rowSums(fx$fission) >= 10, ])   # filtered upstream
+}

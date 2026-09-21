@@ -41,6 +41,12 @@
 #'
 #' @return object of class "attest_check"; `$measurements$min_detectable_fc` is
 #'   the per-gene vector.
+#' @examples
+#' fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
+#' dex <- factor(rep(c("untrt", "trt"), times = 4))
+#' d <- attest_detectability(fx$airway, group = dex)
+#' d
+#' summary(d$measurements$min_detectable_fc[d$measurements$assessable])
 #' @export
 attest_detectability <- function(x, group = NULL, metadata = NULL, power = 0.8,
                                  alpha = 0.05, target_fc = 2, design = NULL,

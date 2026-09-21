@@ -40,3 +40,10 @@ Ensembl version: every fission yeast systematic identifier ends that way
 all-digit identifiers are \emph{not} Excel serial numbers, because Entrez gene IDs
 are all digits; only the textual date forms are reported.
 }
+\examples{
+fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
+m <- fx$airway
+attest_identifiers(m)
+# an htseq-count summary row left in the table
+attest_identifiers(rbind(m, "__no_feature" = round(colSums(m) * 0.1)))
+}

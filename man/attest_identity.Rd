@@ -36,3 +36,10 @@ X-inactivation a clonal female sample expresses one X, so a DNA-style rule
 would call it male. Human markers only; for other species the check reports
 that it could not run.
 }
+\examples{
+fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
+m <- fx$airway
+attest_identity(m)
+# the same library present twice
+attest_identity(cbind(m, copy = m[, 1]))
+}

@@ -26,6 +26,12 @@
 #' @param x counts: matrix, data.frame, SummarizedExperiment, DESeqDataSet or
 #'   DGEList.
 #' @return object of class "attest_check".
+#' @examples
+#' fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
+#' m <- fx$airway
+#' attest_identifiers(m)
+#' # an htseq-count summary row left in the table
+#' attest_identifiers(rbind(m, "__no_feature" = round(colSums(m) * 0.1)))
 #' @export
 attest_identifiers <- function(x) {
 

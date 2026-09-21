@@ -28,6 +28,13 @@
 #' @param of_interest name of the variable whose effect you care about. Defaults
 #'   to the last term in `design`.
 #' @return object of class "attest_check".
+#' @examples
+#' fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
+#' cond <- factor(rep(c("ctrl", "trt"), each = 4))
+#' attest_design(fx$airway, data.frame(cond = cond), ~ cond)
+#' # two libraries per donor, analysed as independent replicates
+#' donor <- data.frame(cond = cond, donor = rep(paste0("d", 1:4), each = 2))
+#' attest_design(fx$airway, donor, ~ cond)
 #' @export
 attest_design <- function(x, metadata, design, of_interest = NULL) {
 

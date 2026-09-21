@@ -47,3 +47,12 @@ size? (\code{attest_design()}; needs a sample sheet and a design formula)
 (\code{attest_detectability()}; needs the two groups being compared)
 }
 }
+\examples{
+fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
+md <- data.frame(cell = factor(rep(c("A", "B", "C", "D"), each = 2)),
+                 dex  = factor(rep(c("untrt", "trt"), times = 4)))
+attest(fx$airway, metadata = md, design = ~ cell + dex)
+
+# a bare matrix: the checks that need a sample sheet are named as not run
+attest(fx$airway)
+}
