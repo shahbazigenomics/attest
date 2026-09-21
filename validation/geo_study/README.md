@@ -38,9 +38,10 @@ look at its log before running anything else.
 ## What it measures
 
 **Sample.** The documented E-utilities filter for series with NCBI-generated
-counts is tried first. On the first real run NCBI accepted it and ignored it
-(identical counts with and without), so `check` and `sample` decide from
-counts, not assumption: if the filter does not cut the search, the frame is
+counts is tried first; `check` and `sample` confirm from the hit counts that
+it actually narrows the search (on the first real run a parsing bug - reading
+a per-term count as the total - made it look ignored; the mock now uses
+NCBI's real reply layout). If the filter does not cut the search, the frame is
 all human series of type "expression profiling by high throughput
 sequencing", and whether NCBI has counts is read from each series' own
 download page ("no NCBI counts" is then an exclusion with a reported rate).

@@ -148,12 +148,12 @@ build_mock <- function(dir, raw_rds = "validation/raw_matrices.rds",
          R = ncbi_from(eq, gid_a, eff_a))
 
   # esearch: count query and paged query
-  writeLines(sprintf("<eSearchResult><Count>%d</Count><RetMax>0</RetMax><IdList></IdList></eSearchResult>", length(esearch_ids)), P("es_count.xml"))
+  writeLines(sprintf("<eSearchResult><Count>%d</Count><RetMax>0</RetMax><IdList></IdList>%s</eSearchResult>", length(esearch_ids), "<TranslationStack><TermSet><Term>\"rnaseq counts\"[Filter]</Term><Count>27715</Count></TermSet><TermSet><Term>gse[ETYP]</Term><Count>296352</Count></TermSet><OP>AND</OP></TranslationStack>"), P("es_count.xml"))
   writeLines(paste0("<eSearchResult><Count>", length(esearch_ids), "</Count><IdList>",
                     paste0("<Id>", esearch_ids, "</Id>", collapse = ""), "</IdList>",
-                    "<QueryTranslation>\"rnaseq counts\"[Filter] AND \"Homo sapiens\"[Organism]</QueryTranslation></eSearchResult>"), P("es_ids.xml"))
+                    "<TranslationStack><TermSet><Term>\"rnaseq counts\"[Filter]</Term><Count>27715</Count></TermSet><TermSet><Term>gse[ETYP]</Term><Count>296352</Count></TermSet><OP>AND</OP></TranslationStack>", "<QueryTranslation>\"rnaseq counts\"[Filter] AND \"Homo sapiens\"[Organism]</QueryTranslation></eSearchResult>"), P("es_ids.xml"))
   # the same search without the counts filter: more series
-  writeLines("<eSearchResult><Count>5000</Count><IdList></IdList></eSearchResult>", P("es_all.xml"))
+  writeLines(paste0("<eSearchResult><Count>5000</Count><IdList></IdList>", "<TranslationStack><TermSet><Term>\"rnaseq counts\"[Filter]</Term><Count>27715</Count></TermSet><TermSet><Term>gse[ETYP]</Term><Count>296352</Count></TermSet><OP>AND</OP></TranslationStack>", "</eSearchResult>"), P("es_all.xml"))
   map <- c(list("re:esearch\\.fcgi\\?db=gds&term=%22Homo" = P("es_all.xml")), map)
   # NCBI Gene's table, for the annotation fallback
   gi <- data.frame("#tax_id" = 9606, GeneID = annot$GeneID, Symbol = annot$Symbol, LocusTag = "-",

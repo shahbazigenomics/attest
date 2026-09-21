@@ -7,10 +7,9 @@ study <- list(
   results  = "validation/geo_study/results",     # per-series results and summary
 
   # which series. The documented filter for series with NCBI-generated counts
-  # is tried first; on the first real run E-utilities accepted it and ignored
-  # it (same count with and without). Then the frame is every human
-  # expression-by-sequencing series, and whether NCBI has counts for a series
-  # is established per series (excluded as "no NCBI counts", and counted).
+  # is used if the hit counts show it narrows the search; otherwise the frame
+  # is every human expression-by-sequencing series, and whether NCBI has
+  # counts is established per series (excluded as "no NCBI counts", counted).
   term       = '"rnaseq counts"[Filter] AND "Homo sapiens"[Organism] AND gse[ETYP]',
   term_frame = '"Homo sapiens"[Organism] AND gse[ETYP] AND "expression profiling by high throughput sequencing"[DataSet Type]',
 

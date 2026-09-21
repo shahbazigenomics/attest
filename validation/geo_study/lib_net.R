@@ -77,6 +77,15 @@ geo_size <- function(url) {                                            # bytes, 
   as.numeric(sub("^[^:]+:\\s*", "", utils::tail(cl, 1)))
 }
 
+# The total hit count of an esearch reply. The reply also lists a <Count> for
+# every term in <TranslationStack>, after the total - so take the first one.
+# (Taking the last one read gse[ETYP]'s count as the total on the first run.)
+es_count <- function(x) {
+  x <- paste(x, collapse = "")
+  m <- regmatches(x, regexpr("<Count>[0-9]+</Count>", x))
+  if (!length(m)) NA_integer_ else as.integer(gsub("[^0-9]", "", m))
+}
+
 eutils_url <- function(tool, ...) {
   q <- list(...)
   if (nzchar(study$email))   q$email   <- study$email
@@ -93,7 +102,7 @@ esearch_info <- function(term, retmax = 5, retstart = 0) {
   x <- paste(geo_text(eutils_url("esearch", db = "gds", term = term, retmax = retmax, retstart = retstart)), collapse = "")
   tag <- function(t) { m <- regmatches(x, regexpr(sprintf("<%s>.*?</%s>", t, t), x, perl = TRUE))
                        if (length(m)) gsub("<[^>]+>", " ", m) else "" }
-  list(count = as.integer(sub(".*<Count>([0-9]+)</Count>.*", "\\1", x)),
+  list(count = es_count(x),
        translation = trimws(tag("QueryTranslation")),
        warnings = trimws(gsub("\\s+", " ", paste(tag("WarningList"), tag("ErrorList")))),
        ids = regmatches(x, gregexpr("(?<=<Id>)[0-9]+(?=</Id>)", x, perl = TRUE))[[1]])
@@ -125,7 +134,7 @@ resolve_frame <- function() {
 # number, so the accession comes straight from the UID.
 esearch_gse <- function(term, page = 10000) {
   first <- geo_text(eutils_url("esearch", db = "gds", term = term, retmax = 0))
-  n <- as.integer(sub(".*<Count>([0-9]+)</Count>.*", "\\1", paste(first, collapse = "")))
+  n <- es_count(first)
   if (is.na(n) || n == 0) return(character(0))
   ids <- character(0)
   for (start in seq(0, n - 1, by = page)) {
