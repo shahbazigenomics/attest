@@ -42,7 +42,8 @@ label_norm   <- "tpm|fpkm|rpkm|cpm|norm|log|vst|rlog|expression_values|abundance
 
 classify_suppl <- function(files, sizes_mb) {
   f <- tolower(files)
-  keep <- grepl("\\.(txt|tsv|csv|tab)(\\.gz)?$|\\.xlsx?$", f) & !grepl(not_a_matrix, f)
+  keep <- grepl("\\.(txt|tsv|csv|tab)(\\.gz)?$|\\.xlsx?$", f) & !grepl(not_a_matrix, f) &
+          !grepl("^filelist\\.txt$|readme|md5", f)            # GEO's listing of the RAW.tar, not data
   single_cell <- grepl("single.?cell|scrna|10x|barcode|cellranger|_sc_", f)
   label <- ifelse(grepl(label_norm, f), "normalised",
            ifelse(grepl(label_counts, f), "counts", "unlabelled"))
@@ -144,24 +145,35 @@ match_columns <- function(A_gene, R, meta) {
       out[!is.na(m)] <- names(t)[m[!is.na(m)]]; how <- "title"
     }
   }
-  # 3. by correlation across shared genes: the same library counted by two
-  #    pipelines agrees better than two libraries do - accepted only with a margin
-  if (how == "none") {
-    g <- intersect(rownames(A_gene), rownames(R)[rowSums(R) > 0])
+  # 3. by correlation of gene-centred profiles: removing each gene's own mean
+  #    (in the author's file and in NCBI's separately) removes gene length and
+  #    pipeline effects, leaving what differs between libraries - which the
+  #    same library keeps across two pipelines. On GEO files: true pairs
+  #    0.97-0.99, runner-up <= 0.55 (FPKM, GSE190775); accepted only with a
+  #    clear margin, never two author columns to one GSM.
+  if (how == "none" && ncol(R) >= 2) {
+    g <- intersect(rownames(A_gene), rownames(R))
     if (length(g) >= 500 && ncol(A_gene) >= 2) {
       la <- log1p(pmax(A_gene[g, , drop = FALSE], 0)); lr <- log1p(R[g, , drop = FALSE])
-      cc <- suppressWarnings(stats::cor(la, lr))
-      # each author sample against every NCBI sample: its best must clear 0.9,
-      # beat its runner-up by 0.005, and not be claimed by another sample
-      best <- apply(cc, 1, function(v) names(v)[which.max(v)])
-      top  <- apply(cc, 1, max)
-      gap  <- apply(cc, 1, function(v) { s <- sort(v, decreasing = TRUE); if (length(s) > 1) s[1] - s[2] else Inf })
-      good <- top >= 0.9 & gap >= 0.005
-      good <- good & !(best %in% best[good][duplicated(best[good])])
-      out[good] <- best[good]
-      if (sum(good) >= 2) how <- "correlation"
+      e <- rowMeans(la) > 0.1 & rowMeans(lr) > log1p(10)
+      if (sum(e) >= 500) {
+        la <- la[e, , drop = FALSE] - rowMeans(la[e, , drop = FALSE])
+        lr <- lr[e, , drop = FALSE] - rowMeans(lr[e, , drop = FALSE])
+        cc <- suppressWarnings(stats::cor(la, lr))
+        cc[!is.finite(cc)] <- -1
+        best <- apply(cc, 1, function(v) names(v)[which.max(v)])
+        top  <- apply(cc, 1, max)
+        gap  <- apply(cc, 1, function(v) { s <- sort(v, decreasing = TRUE); s[1] - s[2] })
+        good <- top >= 0.8 & gap >= 0.25
+        good <- good & !(best %in% best[good][duplicated(best[good])])
+        out[good] <- best[good]
+        if (sum(good) >= 2) how <- "correlation" else out[] <- NA
+      }
     }
   }
+  # only samples NCBI has counts for can be compared (a series may span
+  # platforms NCBI did not process)
+  out[!out %in% gsm] <- NA
   list(gsm = out, how = how)
 }
 

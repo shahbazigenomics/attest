@@ -135,3 +135,32 @@ test_that("a check with no inputs is named, not dropped from the report", {
                    dex  = factor(rep(c("untrt","trt"), times = 4)))
   expect_equal(length(attest(m, metadata = md, design = ~ cell + dex)$not_run), 0L)
 })
+
+test_that("a spreadsheet's totals row and trailing blank rows are found (GEO GSE185245 shape)", {
+  m <- at_fixture()$airway[1:500, ]
+  f <- tempfile(fileext = ".tsv")
+  body <- cbind(gene = rownames(m), as.data.frame(m))
+  blank <- as.data.frame(matrix(NA, 2, ncol(body), dimnames = list(NULL, names(body))))
+  blank$gene <- ""
+  total <- body[1, ]; total$gene <- ""; total[-1] <- colSums(m)
+  utils::write.table(rbind(body, blank, total), f, sep = "\t", quote = FALSE, row.names = FALSE, na = "")
+  r <- attest_file(f)
+  expect_equal(r$checks$input$verdict, "NOT PERMITTED")
+  expect_equal(r$checks$input$measurements$n_empty_rows, 2L)
+  expect_equal(length(r$checks$input$measurements$no_id_rows), 1L)
+  expect_true(grepl("no gene identifier", r$checks$input$headline))
+  expect_equal(r$verdict, "NOT PERMITTED")
+
+  # a row with a gap in it: the value checks decline instead of failing
+  body2 <- body; body2[3, 2] <- NA
+  utils::write.table(body2, f, sep = "\t", quote = FALSE, row.names = FALSE, na = "")
+  r2 <- attest_file(f)
+  expect_equal(r2$checks$input$verdict, "CAUTION")
+  expect_equal(r2$checks$identity$verdict, "UNKNOWN")
+  expect_equal(r2$checks[["value scale"]]$verdict, "UNKNOWN")
+
+  # a genomic Position column is annotation, not a library
+  body3 <- cbind(body[, 1, drop = FALSE], Position = seq_len(nrow(body)), body[, -1])
+  utils::write.table(body3, f, sep = "\t", quote = FALSE, row.names = FALSE)
+  expect_equal(ncol(at_read_counts(f)$counts), ncol(m))
+})

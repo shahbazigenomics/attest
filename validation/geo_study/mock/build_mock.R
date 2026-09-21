@@ -57,7 +57,7 @@ build_mock <- function(dir, raw_rds = "validation/raw_matrices.rds",
       "</body></html>") else sprintf("<html><body>Download %s: %s_RAW.tar (http)</body></html>", gse, gse)
     writeLines(page, file.path(d, "page.html")); put(sprintf("%s/geo/download/?acc=%s", ncbi, gse), file.path(d, "page.html"))
     if (ncbi_counts) {
-      colnames(R) <- gsm
+      if (is.null(colnames(R)) || !all(colnames(R) %in% gsm)) colnames(R) <- gsm[seq_len(ncol(R))]
       tsvgz(data.frame(GeneID = rownames(R), R, check.names = FALSE), file.path(d, "ncbi.tsv.gz"))
       put(sprintf("%s/geo/download/?type=rnaseq_counts&acc=%s&format=file&file=%s_raw_counts_GRCh38.p13_NCBI.tsv.gz", ncbi, gse, gse),
           file.path(d, "ncbi.tsv.gz"))
@@ -126,7 +126,7 @@ build_mock <- function(dir, raw_rds = "validation/raw_matrices.rds",
   series("GSE900006", gsm_k, colnames(kang$counts), list(GSE900006_gene_counts.xlsx = P("a6.xlsx")),
          R = R_k, chars = list(stimulation = as.character(kang$sheet$cond), sex = rep("female", 16)))
   # 7. only raw tar and bigwigs
-  series("GSE900007", gsm_a(7), titles_a, list(), R = R_a, extra_files = c("GSE900007_RAW.tar", "GSE900007_coverage.bw"))
+  series("GSE900007", gsm_a(7), titles_a, list(), R = R_a, extra_files = c("GSE900007_RAW.tar", "filelist.txt", "GSE900007_coverage.bw"))
   # 8. single-cell only
   series("GSE900008", gsm_a(8), titles_a, list(), R = R_a,
          extra_files = c("GSE900008_matrix.mtx.gz", "GSE900008_barcodes.tsv.gz", "GSE900008_features.tsv.gz"))
@@ -140,12 +140,28 @@ build_mock <- function(dir, raw_rds = "validation/raw_matrices.rds",
   # 11. log2(CPM + 1) named expression
   m <- log2(cpm(airway) + 1); colnames(m) <- gsm_a(11)
   series("GSE900011", gsm_a(11), titles_a, list(GSE900011_expression.txt.gz = author_tsv(m, P("a11.txt.gz"))), R = R_a)
-  # 12. equal depths: truth cannot be decided
+  # 12. equal depths, size-factor normalised (not whole numbers): on the count
+  #     scale, and whether depth was divided out cannot be decided - not guessed
   eq <- matrix(stats::rbinom(length(airway), airway, rep(0.95 * min(colSums(airway)) / colSums(airway), each = nrow(airway))),
                nrow(airway), dimnames = dimnames(airway))
-  m <- eq; colnames(m) <- gsm_a(12)
+  m <- t(t(eq) / at_size_factors(eq)); colnames(m) <- gsm_a(12)
   series("GSE900012", gsm_a(12), titles_a, list(GSE900012_counts.txt.gz = author_tsv(m, P("a12.txt.gz"))),
          R = ncbi_from(eq, gid_a, eff_a))
+  # 13. (GSE161013 shape) samples named by title, but NCBI processed only the
+  #     4 on one platform: those 4 are compared, the rest left out, no crash
+  m <- airway; colnames(m) <- titles_a
+  series("GSE900013", gsm_a(13), titles_a, list(GSE900013_rawCounts.txt.gz = author_tsv(m, P("a13.txt.gz"))),
+         R = R_a[, 5:8, drop = FALSE] |> (function(x) { colnames(x) <- gsm_a(13)[5:8]; x })())
+  # 14. (GSE190775 shape) FPKM, columns named nothing GEO knows: matched by
+  #     gene-centred correlation; truth depth removed from the levels
+  fpkm <- t(t(airway / len * 1e3) / colSums(airway)) * 1e6
+  m <- fpkm[, c(3, 1, 4, 2, 8, 6, 7, 5)]; colnames(m) <- paste0("AML", 1:8)
+  series("GSE900014", gsm_a(14), titles_a, list(GSE900014_AML.txt.gz = author_tsv(m, P("a14.txt.gz"))), R = R_a)
+  # 15. (GSE185245 shape) spreadsheet with a totals row and blank rows at the foot
+  ex <- data.frame(gene_id = rownames(airway), airway, check.names = FALSE); colnames(ex)[-1] <- gsm_a(15)
+  foot <- ex[1:3, ]; foot[] <- NA; foot$gene_id[] <- NA; foot[3, -1] <- colSums(airway)
+  writexl::write_xlsx(rbind(ex, foot), P("a15.xlsx"))
+  series("GSE900015", gsm_a(15), titles_a, list(GSE900015_counts.xlsx = P("a15.xlsx")), R = R_a)
 
   # esearch: count query and paged query
   writeLines(sprintf("<eSearchResult><Count>%d</Count><RetMax>0</RetMax><IdList></IdList>%s</eSearchResult>", length(esearch_ids), "<TranslationStack><TermSet><Term>\"rnaseq counts\"[Filter]</Term><Count>27715</Count></TermSet><TermSet><Term>gse[ETYP]</Term><Count>296352</Count></TermSet><OP>AND</OP></TranslationStack>"), P("es_count.xml"))

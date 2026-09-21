@@ -18,6 +18,11 @@ First release.
   variable globin was a false alarm under the old rule). The new measure also
   catches normalised matrices down to 30k reads per sample, where the old one
   failed below 1M.
+* `attest_file()` drops empty rows and reports rows of numbers with no gene
+  identifier - the totals row at the foot of a spreadsheet - as NOT PERMITTED,
+  since every tool downstream would analyse it as a gene. A `Position` column
+  is treated as annotation. `attest_identity()` declines a matrix with missing
+  values instead of failing; it crashed on the first such file from GEO.
 * `attest_strandedness()`: the library protocol from STAR's `ReadsPerGene.out.tab`,
   and which of its columns a count matrix was built from; a featureCounts
   `.summary` raises a collapse of assigned reads and otherwise says it cannot

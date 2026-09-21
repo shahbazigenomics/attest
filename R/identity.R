@@ -35,6 +35,10 @@ attest_identity <- function(x, metadata = NULL, sex_col = NULL, dup_floor = 0.99
     return(at_result("UNKNOWN", "The input could not be read as a numeric matrix.",
                      character(0), NULL, character(0), list(input_class = class(x)[1])))
   }
+  if (anyNA(m)) {
+    return(at_result("UNKNOWN", "The matrix contains missing values (NA).",
+                     character(0), NULL, character(0), list(n_na = sum(is.na(m)))))
+  }
   if (ncol(m) < 2) {
     return(at_result("UNKNOWN", "Sample identity needs at least 2 samples.",
                      character(0), NULL, character(0), list(dim = dim(m))))

@@ -61,7 +61,7 @@ attest_file <- function(path, sep = NULL, ...) {
 at_annotation_names <- function()
   c("chr", "chrs", "start", "end", "strand", "length", "genelength",
     "gene_name", "genename", "symbol", "gene_symbol", "biotype",
-    "gene_biotype", "description", "seqnames", "width")
+    "gene_biotype", "description", "seqnames", "width", "position", "pos")
 
 # the names R invents when a column has no header of its own
 at_unnamed <- function(x)
@@ -185,12 +185,41 @@ at_read_counts <- function(path, sep = NULL) {
                             if (n_comment) sprintf(", after %d comment line%s", n_comment,
                                                    if (n_comment > 1) "s" else "") else ""))
 
+  # --- rows that are not genes: blank rows, and values with no identifier ----
+  # Spreadsheets often end in empty rows and a totals row whose label sits in
+  # another column. A totals row has numbers, so it would be analysed as a gene.
+  empty <- rowSums(!is.na(m)) == 0
+  if (any(empty)) {
+    ev$n_empty_rows <- sum(empty)
+    lines <- c(lines, sprintf("%d empty row%s dropped", sum(empty), if (sum(empty) > 1) "s" else ""))
+    m <- m[!empty, , drop = FALSE]
+    if (!is.null(ids)) ids <- ids[!empty]
+    ev$n_genes <- nrow(m)
+  }
+  if (!is.null(ids)) {
+    no_id <- is.na(ids) | !nzchar(trimws(ids))
+    if (any(no_id)) {
+      ev$no_id_rows <- which(no_id)
+      verdict <- "NOT PERMITTED"
+      lines <- c(lines, sprintf("%d row%s %s numbers but no gene identifier (rows %s) - typically a totals row at the foot of a spreadsheet; it would be analysed as a gene. Remove %s.",
+                                sum(no_id), if (sum(no_id) > 1) "s" else "", if (sum(no_id) > 1) "have" else "has",
+                                paste(utils::head(which(no_id), 5), collapse = ", "),
+                                if (sum(no_id) > 1) "them" else "it"))
+    }
+  }
+  if (anyNA(m)) {
+    ev$n_na_rows <- sum(rowSums(is.na(m)) > 0)
+    verdict <- at_worst(c(verdict, "CAUTION"))
+    lines <- c(lines, sprintf("%d row%s missing values; checks on the values cannot run until they are removed or filled",
+                              ev$n_na_rows, if (ev$n_na_rows > 1) "s contain" else " contains"))
+  }
+
   # --- duplicated identifiers ---------------------------------------------
   if (!is.null(ids)) {
     dup <- duplicated(ids)
     ev$n_duplicate_ids <- sum(dup)
     if (any(dup)) {
-      verdict <- "CAUTION"
+      verdict <- at_worst(c(verdict, "CAUTION"))
       lines <- c(lines, sprintf("%s identifier%s appear more than once (first: %s); they are kept as separate rows, made unique",
                                 format(sum(dup), big.mark = ","),
                                 if (sum(dup) > 1) "s" else "",
@@ -200,20 +229,29 @@ at_read_counts <- function(path, sep = NULL) {
     rownames(m) <- ids
   }
 
-  headline <- if (verdict == "CAUTION")
+  n_dup <- if (is.null(ev$n_duplicate_ids)) 0 else ev$n_duplicate_ids
+  n_noid <- length(ev$no_id_rows)
+  headline <- if (n_noid)
+    "The file was read, but it has rows of numbers with no gene identifier."
+  else if (n_dup)
     "The file was read, but some gene identifiers are duplicated."
+  else if (!is.null(ev$n_na_rows))
+    "The file was read, but some values are missing."
   else if (length(ann))
     "The file was read as counts, with its annotation columns removed."
   else "The file was read as counts."
+  cost <- c(
+    if (n_noid) paste("A row without an identifier is still a row of numbers: every tool downstream treats it as",
+                      "a gene. A totals row is thousands of times larger than any gene, so it dominates",
+                      "normalisation and the variance of every sample."),
+    if (n_dup) paste("Duplicated identifiers usually mean the file was written from a transcript- or exon-level",
+                     "table without aggregating, or that symbols were used where two Ensembl genes share one.",
+                     "Counts for the same gene end up split across rows, which lowers every one of them below",
+                     "the filters and the tests."))
 
   list(counts = m,
        check  = at_result(
          verdict, headline, lines,
-         if (verdict == "CAUTION")
-           paste("Duplicated identifiers usually mean the file was written from a transcript- or exon-level",
-                 "table without aggregating, or that symbols were used where two Ensembl genes share one.",
-                 "Counts for the same gene end up split across rows, which lowers every one of them below",
-                 "the filters and the tests.")
-         else NULL,
+         if (length(cost)) paste(cost, collapse = " ") else NULL,
          na, ev))
 }

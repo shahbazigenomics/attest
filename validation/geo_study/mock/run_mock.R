@@ -36,12 +36,17 @@ ok(row("GSE900005")$summary_rows == 5 && row("GSE900005")$v_identifiers == "NOT 
 ok(isTRUE(row("GSE900006")$from_excel) && row("GSE900006")$excel_dates == 3 && row("GSE900006")$truth_value == "raw counts" &&
    row("GSE900006")$id_system == "symbol or systematic", "6 Excel file: converted, 3 dates found, symbols mapped, truth raw")
 ok(sum(res$GSE900006$sex$mismatch) == 0 && nrow(res$GSE900006$sex) == 16, "6 all 16 female, no mismatch")
-ok(res$GSE900007$status == "no matrix file", "7 raw tar and bigwig only: excluded as no matrix file")
+ok(res$GSE900007$status == "per-sample files only (RAW.tar)", "7 raw tar, filelist.txt and bigwig only: excluded as per-sample files only")
 ok(res$GSE900008$status == "single-cell only", "8 single-cell only: excluded")
 ok(res$GSE900009$status == "no NCBI counts", "9 no NCBI counts: excluded")
-ok(row("GSE900010")$truth_value == "depth removed" && row("GSE900010")$v_value == "CAUTION", "10 DESeq2-normalised: truth depth removed, attest CAUTION")
+ok(row("GSE900010")$truth_value == "depth removed" && row("GSE900010")$v_value == "CAUTION", "10 DESeq2-normalised and rounded: truth depth removed (slope beats whole numbers), attest CAUTION")
 ok(row("GSE900011")$truth_value == "log-transformed" && row("GSE900011")$v_value == "NOT PERMITTED", "11 log2 CPM: truth log, attest NOT PERMITTED")
-ok(row("GSE900012")$truth_value == "undetermined", "12 equal depths: truth undetermined, not guessed")
+ok(row("GSE900012")$truth_value == "count scale, not whole numbers", "12 normalised, equal depths: count scale, which kind not guessed")
+ok(row("GSE900013")$match_how == "title" && row("GSE900013")$n_matched == 4 && row("GSE900013")$truth_value == "raw counts",
+   "13 NCBI has 4 of 8 samples: those 4 compared, truth raw counts")
+ok(row("GSE900014")$match_how == "correlation" && row("GSE900014")$n_matched == 8 && row("GSE900014")$truth_value == "depth removed" &&
+   row("GSE900014")$v_value == "NOT PERMITTED", "14 FPKM, unknown column names: matched by gene-centred correlation, truth depth removed, caught")
+ok(row("GSE900015")$v_input == "NOT PERMITTED" && row("GSE900015")$truth_value == "raw counts", "15 spreadsheet totals row: attest NOT PERMITTED (input)")
 
 # NCBI accepts the counts filter but ignores it (as on the first real run):
 # the frame falls back to all human expression-by-sequencing series

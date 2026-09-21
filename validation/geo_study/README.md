@@ -63,17 +63,26 @@ converted to text first, as a user would, and that is recorded.
 **attest.** `attest_file()` on each file, with no sample sheet - what a user
 who has just downloaded the file would get.
 
-**Truth, independent of attest.** Author samples are matched to GSMs (by
-accession, then by sample title, then by correlation with a stated margin);
-author genes are mapped to NCBI GeneIDs through Ensembl IDs, symbols or
-Entrez IDs.
-- *Value scale*: slope of log(author sample total) on log(NCBI sample total).
-  NCBI's totals measure sequencing depth. Raw counts keep it (slope near 1);
-  CPM, TPM, FPKM and normalised values have divided it out (slope near 0).
-  Labels: raw counts (> 0.7, whole numbers), estimated counts (> 0.7, not
-  whole), depth removed (< 0.3), log-transformed, ambiguous, or
-  **undetermined** when fewer than 4 samples match or NCBI depths differ by
-  less than 1.3x - never guessed.
+**Truth, independent of attest.** Author samples are matched to GSMs by
+accession, then by sample title, then by correlation of gene-centred profiles
+(each gene's mean removed in each file separately, which removes gene length
+and pipeline effects and leaves what differs between libraries; accepted only
+if the best correlation is >= 0.8 and >= 0.25 above the runner-up, one GSM per
+column). Only GSMs NCBI has counts for are compared - a series can span
+platforms NCBI did not process. Author genes are mapped to NCBI GeneIDs
+through Ensembl IDs, symbols or Entrez IDs.
+- *Value scale*: per sample, the median of author value / NCBI count over
+  genes NCBI counts >= 50 in every matched sample. The same reads counted by
+  two pipelines agree within ~2-fold; CPM, TPM and FPKM sit near 1e6 / depth.
+  Labels: raw counts (all within 3-fold, whole numbers), depth removed (all
+  below 0.2), log-transformed, and - for values on the count scale that are
+  not whole numbers - estimated counts or depth removed by the slope of that
+  level on NCBI depth across samples (~0 vs ~-1; only with >= 4 samples and
+  SE < 0.15; a decisive slope also overrides whole numbers, since normalised
+  counts are often rounded). Otherwise "count scale, not whole numbers" or
+  ambiguous - never guessed. Sample totals are not used: the pilot showed an
+  author file's total includes features NCBI does not count (htseq's
+  `__no_feature` held up to 61% of each library in a file named rawCounts).
 - *Completeness*: among genes with zero NCBI reads in every matched sample
   (and nameable in the author's ID system), the share present in the author's
   file. Complete matrices keep them (> 0.6); filtered ones drop them (< 0.3).
@@ -103,8 +112,11 @@ It also plants NCBI answering a download with a bot-check web page (as
 happened on the first real run): the page is never cached as data, and the
 annotation falls back to NCBI Gene's `Homo_sapiens.gene_info.gz`; NCBI
 ignoring the counts filter (the frame falls back); and a bot check on a
-series' download page (retried, not counted as "no NCBI counts").
-All 22 checks come out as planted.
+series' download page (retried, not counted as "no NCBI counts"); and four
+shapes found in the pilot - NCBI covering only some of a series' samples, FPKM
+with column names GEO does not know, rounded normalised counts, and a
+spreadsheet with a totals row.
+All 25 checks come out as planted.
 
 ## Limits to state with the results
 

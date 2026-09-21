@@ -71,10 +71,17 @@ stage_summary <- function() {
     add(md_table(tab))
 
     add("\n## attest against the NCBI-based truth (value scale)\n")
-    add("Truth comes from NCBI's own raw counts for the same samples: the slope of log(author total) on log(NCBI total) across samples - near 1 when sequencing depth is still in the values, near 0 when it has been divided out. It uses none of attest's rules.\n")
+    add("Truth comes from NCBI's own raw counts for the same samples, never from attest's rules: per sample, the median of author value / NCBI count over genes NCBI counts >= 50 everywhere. Raw and estimated counts sit within 3-fold of 1; CPM, TPM and FPKM sit near 1e6 / depth (all below 0.2 = depth removed). For non-integer values on the count scale, the slope of that level on NCBI depth (used only if its SE < 0.15) separates estimated counts (~0) from normalised counts (~-1).\n")
     det <- aud[!is.na(aud$truth_value) & !aud$truth_value %in% c("undetermined", "ambiguous"), , drop = FALSE]
-    add(sprintf("Files with a determined truth: %d of %d audited (the rest: too few matched samples, too-even depths, or samples not matched).\n",
-                nrow(det), n))
+    add(sprintf("Files with a determined truth: %d of %d audited.\n", nrow(det), n))
+    und <- aud[is.na(aud$truth_value) | aud$truth_value %in% c("undetermined", "ambiguous"), , drop = FALSE]
+    if (nrow(und)) {
+      why <- ifelse(is.na(und$n_matched), "author genes could not be mapped to NCBI genes",
+             ifelse(und$n_matched < 2, paste0("samples not matched to GSMs (", ifelse(is.na(und$match_how), "-", und$match_how), ")"),
+             ifelse(is.na(und$truth_why), und$truth_value, und$truth_why)))
+      add("\nWhy the rest are undetermined:\n")
+      add(md_table(as.data.frame(table(reason = why), stringsAsFactors = FALSE)))
+    }
     if (nrow(det)) {
       ct <- as.data.frame.matrix(table(truth = det$truth_value, attest = det$v_value))
       add(md_table(cbind(truth = rownames(ct), ct)))
@@ -109,6 +116,14 @@ stage_summary <- function() {
   add("\n## Consequence: DESeq2 on the author's file vs on NCBI's raw counts\n")
   add("For files NCBI shows to be non-raw, with a two-level condition (>= 3 samples each) in the GEO annotation. Same samples, same design (`~ cond`), padj < 0.05.\n")
   add(md_table(cons))
+
+  nr <- if (nrow(files)) files[files$status %in% c("not read by attest", "attest error"), , drop = FALSE] else files
+  add("\n## Files attest could not read, or failed on\n")
+  add("Kept in cache/ for inspection. A file a user would download and that attest cannot read is itself a result.\n")
+  if (nrow(nr)) {
+    msg <- if ("attest_message" %in% names(nr)) ifelse(is.na(nr$attest_message), nr$input_headline, nr$attest_message) else nr$input_headline
+    add(md_table(data.frame(gse = nr$gse, file = nr$file, status = nr$status, message = msg)))
+  } else add("(none)\n")
 
   add("\n## Exclusions\n")
   if (nrow(files)) add(md_table(as.data.frame(table(file_status = files$status), stringsAsFactors = FALSE)))

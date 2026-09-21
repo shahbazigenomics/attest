@@ -121,7 +121,8 @@ process_series <- function(gse) {
   out$suppl <- cl
   use <- cl[cl$candidate & !cl$too_large, ]
   if (!nrow(use)) {
-    out$status <- if (any(cl$too_large)) "matrix too large" else if (any(cl$single_cell)) "single-cell only" else "no matrix file"
+    out$status <- if (any(cl$too_large)) "matrix too large" else if (any(cl$single_cell)) "single-cell only"
+                  else if (any(grepl("_RAW\\.tar$", cl$file))) "per-sample files only (RAW.tar)" else "no matrix file"
     return(out)
   }
   use <- use[order(match(use$labelled_as, c("counts", "unlabelled", "normalised"))), ]
@@ -138,9 +139,15 @@ process_series <- function(gse) {
     if (is.null(tx)) { row$status <- "unreadable spreadsheet"; rows[[i]] <- row; next }
     row$from_excel <- tx$converted
 
-    rep <- tryCatch(attest_file(tx$path), error = function(e) NULL)
-    if (is.null(rep)) { row$status <- "attest error"; rows[[i]] <- row; next }
+    rep <- tryCatch(attest_file(tx$path), error = function(e) conditionMessage(e))
+    if (is.character(rep)) {                 # a crash in attest: a bug to fix, kept for inspection
+      row$status <- "attest error"; row$attest_message <- rep; row$kept <- TRUE; rows[[i]] <- row; next
+    }
     v <- function(k) if (is.null(rep$checks[[k]])) NA_character_ else rep$checks[[k]]$verdict
+    row$input_headline <- rep$checks$input$headline
+    if (is.null(rep$checks[["value scale"]])) {  # attest could not read it as a count table: kept to look at
+      row$status <- "not read by attest"; row$kept <- TRUE; rows[[i]] <- row; next
+    }
     row$status <- "audited"
     row$attest_overall <- rep$verdict
     row$v_input <- v("input"); row$v_value <- v("value scale"); row$v_identifiers <- v("identifiers")
@@ -163,8 +170,11 @@ process_series <- function(gse) {
         ok <- !is.na(mc$gsm)
         row$match_how <- mc$how; row$n_matched <- sum(ok)
         if (sum(ok) >= 2) {
-          tv <- truth_value_scale(A[, ok, drop = FALSE], R[, mc$gsm[ok], drop = FALSE])
-          row$truth_value <- tv$label; row$truth_slope <- tv$slope; row$depth_spread <- tv$depth_spread
+          tv <- truth_value_scale(A[, ok, drop = FALSE], Ag[, ok, drop = FALSE], R[, mc$gsm[ok], drop = FALSE])
+          row$truth_value <- tv$label; row$truth_level <- tv$level
+          row$truth_level_range <- sprintf("%.3g-%.3g", tv$level_min, tv$level_max)
+          row$depth_slope <- tv$depth_slope; row$depth_slope_se <- tv$depth_slope_se
+          row$depth_spread <- tv$depth_spread; row$truth_why <- tv$why
           tc <- truth_completeness(unique(mp$gene_id[!is.na(mp$gene_id)]), R[, mc$gsm[ok], drop = FALSE],
                                    representable(annot, mp$system))
           row$truth_completeness <- tc$label; row$zero_present_frac <- tc$present_frac
