@@ -91,23 +91,56 @@ at_read_counts <- function(path, sep = NULL) {
   if (!length(body)) return(fail("The file holds only comment lines.", list(path = path)))
 
   if (is.null(sep)) {
-    per_line <- function(s) stats::median(vapply(utils::head(body, 5), function(l)
-      as.numeric(length(gregexpr(s, l, fixed = TRUE)[[1]][gregexpr(s, l, fixed = TRUE)[[1]] > 0])),
-      numeric(1)))
+    # the right separator gives the SAME field count line after line; a count
+    # like ";" can win on raw occurrences while being useless as a delimiter,
+    # e.g. featureCounts' Chr/Start/End columns join multiple exons with ";"
+    # (hundreds per line) while tab stays at a constant field count
+    consistency <- function(s) {
+      w <- vapply(utils::head(body, 8), function(l) length(strsplit(l, s, fixed = TRUE)[[1]]), integer(1))
+      m <- as.integer(names(sort(table(w), decreasing = TRUE))[1])
+      c(fields = m, consistent = mean(w == m))
+    }
     cand <- c("\t", ",", ";")
-    n <- vapply(cand, per_line, numeric(1))
-    if (max(n) >= 1) {
-      sep <- cand[which.max(n)]
-    } else if (per_line(" ") >= 1) {
-      sep <- " "
+    cs <- sapply(cand, consistency)
+    good <- cs["fields", ] >= 2 & cs["consistent", ] >= 0.75
+    if (any(good)) {
+      sep <- cand[good][which.max(cs["fields", good])]
     } else {
-      return(fail("No tab, comma or semicolon in the first data line, so this does not look like a count table.",
-                  list(first_line = substr(body[1], 1, 120))))
+      per_line <- function(s) stats::median(vapply(utils::head(body, 5), function(l)
+        as.numeric(length(gregexpr(s, l, fixed = TRUE)[[1]][gregexpr(s, l, fixed = TRUE)[[1]] > 0])),
+        numeric(1)))
+      n <- vapply(cand, per_line, numeric(1))
+      if (max(n) >= 1) {
+        sep <- cand[which.max(n)]
+      } else if (per_line(" ") >= 1) {
+        sep <- " "
+      } else {
+        return(fail("No tab, comma or semicolon in the first data line, so this does not look like a count table.",
+                    list(first_line = substr(body[1], 1, 120))))
+      }
     }
   }
 
+  # rows above the real header: a title or a merged-cell super-header,
+  # exported as mostly-blank lines padded to the file's column count. The
+  # real header is the first line that is (almost) entirely filled and is
+  # itself followed by a line that is also filled and mostly numeric.
+  filled <- function(l) { f <- strsplit(l, sep, fixed = TRUE)[[1]]; if (!length(f)) return(0)
+                          mean(nzchar(trimws(f))) }
+  numeric_frac <- function(l) { f <- strsplit(l, sep, fixed = TRUE)[[1]]; f <- trimws(f)
+                                f <- f[nzchar(f)]; if (!length(f)) return(0)
+                                mean(!is.na(suppressWarnings(as.numeric(f)))) }
+  n_banner <- 0L
+  window <- seq_len(min(15L, length(body) - 1L))
+  for (i in window) {
+    if (filled(body[i]) >= 0.8 && filled(body[i + 1]) >= 0.8 && numeric_frac(body[i + 1]) >= 0.5) {
+      n_banner <- i - 1L; break
+    }
+  }
+  skip <- n_comment + n_banner
+
   df <- tryCatch(
-    utils::read.table(path, sep = sep, header = TRUE, skip = n_comment,
+    utils::read.table(path, sep = sep, header = TRUE, skip = skip,
                       check.names = FALSE, quote = "\"", comment.char = "",
                       stringsAsFactors = FALSE),
     error = function(e) NULL)
@@ -115,12 +148,15 @@ at_read_counts <- function(path, sep = NULL) {
     return(fail(sprintf("The file could not be parsed as a '%s'-separated table.",
                         if (sep == "\t") "tab" else sep), list(sep = sep)))
 
-  ev <- list(path = path, sep = sep, n_comment_lines = n_comment,
+  ev <- list(path = path, sep = sep, n_comment_lines = n_comment, n_banner_rows = n_banner,
              columns_read = ncol(df), rows_read = nrow(df),
              featurecounts = grepl("^# Program:featureCounts", head_lines[1]))
   lines <- character(0)
   na <- character(0)
   verdict <- "PERMITTED"
+  if (n_banner > 0)
+    lines <- c(lines, sprintf("%d row%s above the header %s skipped (blank or a title, not part of the table)",
+                              n_banner, if (n_banner > 1) "s" else "", if (n_banner > 1) "were" else "was"))
 
   # --- the gene identifier ------------------------------------------------
   ids <- NULL

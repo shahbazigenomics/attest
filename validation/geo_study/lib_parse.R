@@ -145,26 +145,54 @@ match_columns <- function(A_gene, R, meta) {
       out[!is.na(m)] <- names(t)[m[!is.na(m)]]; how <- "title"
     }
   }
-  # 3. by correlation of gene-centred profiles: removing each gene's own mean
-  #    (in the author's file and in NCBI's separately) removes gene length and
-  #    pipeline effects, leaving what differs between libraries - which the
-  #    same library keeps across two pipelines. On GEO files: true pairs
-  #    0.97-0.99, runner-up <= 0.55 (FPKM, GSE190775); accepted only with a
-  #    clear margin, never two author columns to one GSM.
+  # 3. by two independent correlations agreeing on the same GSM for a column.
+  #    Plain log1p correlation (same reads, two pipelines) is usually high for
+  #    every pairing when the samples are biologically similar (0.93-0.95
+  #    across the board on a knockdown series, GSE181991), so its margin over
+  #    the runner-up can be tiny (0.003-0.01) even when it is right - not
+  #    something to threshold on alone. Gene-centred correlation (each gene's
+  #    own mean removed, in each file separately, which cancels gene length
+  #    and pipeline effects) gives a much wider margin when the *scale*
+  #    differs, e.g. FPKM vs counts (GSE190775: 0.97 vs <=0.55) - but a
+  #    smaller absolute value and margin when the scale already agrees
+  #    (GSE181991: 0.5-0.8, margin 0.19-0.44), because it also removes the
+  #    baseline-expression signal plain correlation was leaning on there.
+  #    Neither threshold is safe alone; requiring the two methods to name the
+  #    same GSM is. Checked on 3 real series (18 columns, raw and FPKM,
+  #    tight and wide biological differences): the two methods agreed on
+  #    every column, and every agreed pairing matched the GEO title's own
+  #    wording (PLAG1-knockdown to "PLAG1 knockdown", CEdG to "CEdG rep",
+  #    Ri to "+Ri", Untreated to "Control").
   if (how == "none" && ncol(R) >= 2) {
     g <- intersect(rownames(A_gene), rownames(R))
     if (length(g) >= 500 && ncol(A_gene) >= 2) {
       la <- log1p(pmax(A_gene[g, , drop = FALSE], 0)); lr <- log1p(R[g, , drop = FALSE])
-      e <- rowMeans(la) > 0.1 & rowMeans(lr) > log1p(10)
-      if (sum(e) >= 500) {
-        la <- la[e, , drop = FALSE] - rowMeans(la[e, , drop = FALSE])
-        lr <- lr[e, , drop = FALSE] - rowMeans(lr[e, , drop = FALSE])
-        cc <- suppressWarnings(stats::cor(la, lr))
-        cc[!is.finite(cc)] <- -1
+      pick <- function(cc) { cc[!is.finite(cc)] <- -1
         best <- apply(cc, 1, function(v) names(v)[which.max(v)])
-        top  <- apply(cc, 1, max)
         gap  <- apply(cc, 1, function(v) { s <- sort(v, decreasing = TRUE); s[1] - s[2] })
-        good <- top >= 0.8 & gap >= 0.25
+        list(best = best, top = apply(cc, 1, max), gap = gap) }
+      keep <- rowSums(lr > 0) > 0
+      P <- if (sum(keep) >= 500) pick(suppressWarnings(stats::cor(la[keep, , drop = FALSE], lr[keep, , drop = FALSE]))) else NULL
+      e <- rowMeans(la) > 0.1 & rowMeans(lr) > log1p(10)
+      C <- if (sum(e) >= 500) pick(suppressWarnings(stats::cor(
+             sweep(la[e, , drop = FALSE], 1, rowMeans(la[e, , drop = FALSE])),
+             sweep(lr[e, , drop = FALSE], 1, rowMeans(lr[e, , drop = FALSE]))))) else NULL
+      # a true correspondence is one-to-one; if plain correlation's own best
+      # guesses already collide (two columns claiming the same GSM), that is
+      # proof it is not discriminating here (seen on synthetic FPKM: 8
+      # columns, 4 of them best-matched the same GSM) - fall back to
+      # gene-centred correlation alone, at the stricter bar it needs without
+      # a second method backing it up (0.97-0.99 vs <=0.55 on real FPKM).
+      plain_ok <- !is.null(P) && !anyDuplicated(P$best)
+      if (plain_ok && !is.null(C)) {
+        agree <- P$best == C$best
+        good <- agree & P$top >= 0.3 & C$top >= 0.3 & (P$gap >= 0.05 | C$gap >= 0.05)
+        best <- P$best
+      } else if (!is.null(C)) {
+        good <- C$top >= 0.8 & C$gap >= 0.25
+        best <- C$best
+      } else good <- NULL
+      if (!is.null(good)) {
         good <- good & !(best %in% best[good][duplicated(best[good])])
         out[good] <- best[good]
         if (sum(good) >= 2) how <- "correlation" else out[] <- NA

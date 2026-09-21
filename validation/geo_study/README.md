@@ -64,13 +64,21 @@ converted to text first, as a user would, and that is recorded.
 who has just downloaded the file would get.
 
 **Truth, independent of attest.** Author samples are matched to GSMs by
-accession, then by sample title, then by correlation of gene-centred profiles
-(each gene's mean removed in each file separately, which removes gene length
-and pipeline effects and leaves what differs between libraries; accepted only
-if the best correlation is >= 0.8 and >= 0.25 above the runner-up, one GSM per
-column). Only GSMs NCBI has counts for are compared - a series can span
-platforms NCBI did not process. Author genes are mapped to NCBI GeneIDs
-through Ensembl IDs, symbols or Entrez IDs.
+accession, then by sample title, then by two independent correlations of the
+author's values against NCBI's raw counts agreeing on the same GSM: a plain
+log1p correlation, and a gene-centred one (each gene's own mean removed, in
+each file separately, which cancels gene length and pipeline effects). Either
+alone is fooled sometimes - plain correlation nearly ties between candidates
+when the values are on a different scale (FPKM, GSE190775: 0.83 vs 0.80);
+gene-centred correlation loses absolute separation when the samples are
+already comparable and biologically similar (a knockdown series, GSE181991:
+0.5-0.8 with margins of 0.2-0.4) - but on every real series tried, the two
+methods agreed on every column, and every agreement matched the GEO title's
+own wording. When plain correlation's own best guesses already collide (two
+columns claiming the same GSM - proof it is not discriminating, seen on
+simulated FPKM), matching falls back to gene-centred correlation alone at a
+stricter bar. Author genes are mapped to NCBI GeneIDs through Ensembl IDs,
+symbols or Entrez IDs.
 - *Value scale*: per sample, the median of author value / NCBI count over
   genes NCBI counts >= 50 in every matched sample. The same reads counted by
   two pipelines agree within ~2-fold; CPM, TPM and FPKM sit near 1e6 / depth.
@@ -116,7 +124,7 @@ series' download page (retried, not counted as "no NCBI counts"); and four
 shapes found in the pilot - NCBI covering only some of a series' samples, FPKM
 with column names GEO does not know, rounded normalised counts, and a
 spreadsheet with a totals row.
-All 25 checks come out as planted.
+All 25 checks come out as planted (case 5's raw-count matching already exercises the same thin-gap, high-correlation regime the layered rule above is built for).
 
 ## Limits to state with the results
 

@@ -164,3 +164,46 @@ test_that("a spreadsheet's totals row and trailing blank rows are found (GEO GSE
   utils::write.table(body3, f, sep = "\t", quote = FALSE, row.names = FALSE)
   expect_equal(ncol(at_read_counts(f)$counts), ncol(m))
 })
+
+test_that("tab wins over a delimiter-like character inside an annotation column (GEO GSE115255 shape)", {
+  m <- at_fixture()$airway[1:300, ]
+  # featureCounts' Chr/Start/End join multiple exons with ';' - a DIFFERENT
+  # number per gene (real genes have different exon counts), so semicolons
+  # are inconsistent line to line even though tabs stay fixed at 6 + ncol(m)
+  set.seed(1)
+  nexon <- sample(1:40, nrow(m), replace = TRUE)
+  joined <- function(x) vapply(nexon, function(k) paste(rep(x, k), collapse = ";"), "")
+  body <- data.frame(Geneid = rownames(m), Chr = joined("chrX"), Start = joined("100"),
+                     End = joined("200"), Strand = joined("+"), Length = 1000, m, check.names = FALSE)
+  f <- tempfile(fileext = ".tsv")
+  utils::write.table(body, f, sep = "\t", quote = FALSE, row.names = FALSE)
+  rd <- at_read_counts(f)
+  expect_equal(rd$check$measurements$sep, "\t")
+  expect_equal(ncol(rd$counts), ncol(m))
+  expect_equal(nrow(rd$counts), nrow(m))
+})
+
+test_that("a title and merged-header rows above the real header are skipped (GEO GSE162669 shape)", {
+  m <- at_fixture()$airway[1:400, ]
+  f <- tempfile(fileext = ".tsv")
+  ncol_out <- ncol(m) + 2
+  blank_row <- function(first) c(first, rep("", ncol_out - 1))
+  lines <- c(
+    paste(blank_row("Raw counts of sequencing reads (TPM)"), collapse = "\t"),
+    paste(c("", "", "Sample Name", rep("", ncol_out - 3)), collapse = "\t"),
+    paste(c("", "", colnames(m)), collapse = "\t"),
+    paste(blank_row("Sample No."), collapse = "\t"),
+    paste(c("ID", "symbol", colnames(m)), collapse = "\t"))
+  body <- apply(cbind(rownames(m), "SYM", m), 1, paste, collapse = "\t")
+  writeLines(c(lines, body), f)
+  rd <- at_read_counts(f)
+  expect_equal(rd$check$measurements$n_banner_rows, 4L)
+  expect_equal(dim(rd$counts), dim(m))
+  expect_equal(colnames(rd$counts), colnames(m))
+  expect_true(any(grepl("rows above the header", rd$check$evidence)))
+
+  # an ordinary file with no banner rows is read exactly as before (n_banner = 0)
+  f2 <- tempfile(fileext = ".tsv")
+  utils::write.table(cbind(gene = rownames(m), as.data.frame(m)), f2, sep = "\t", quote = FALSE, row.names = FALSE)
+  expect_equal(at_read_counts(f2)$check$measurements$n_banner_rows, 0L)
+})
