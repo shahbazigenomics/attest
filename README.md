@@ -298,7 +298,15 @@ design log records each one: what was assumed, which dataset broke it, what repl
   has two readings, and lists the direct check as not assessed.
 - Genuine salmon/kallisto estimates from an unusually even experiment can be reported as
   normalised; the message names that reading and points to `tximport`.
-- Single-cell and UMI matrices are simulated only, not yet tested on real data.
+- UMI data is validated as pseudobulk on real data - Kang 2018, 10x PBMCs, 8 donors x 2
+  conditions (`validation/umi_pseudobulk.R`): every check and every value-scale transform
+  correct. Per-cell matrices are out of scope; attest is for the matrix that goes into
+  DESeq2 or edgeR.
+- Detectability is conservative on paired and blocked designs. It pools noise within the
+  compared groups, so the donor or cell-line differences the design removes are counted as
+  noise: on airway the median detectable change is reported as 1.82-fold where the design's
+  own residuals give about 1.5 (`validation/detectability_vs_deseq2.R`). It errs towards
+  "could not have been seen", never the other way.
 - A numeric sample-sheet column is tested against two-group comparisons only, and a
   numeric column that is really a batch code (`1, 1, 2, 2, ...`) is treated as a
   number, not as groups; code batches as text to get the nesting test.
