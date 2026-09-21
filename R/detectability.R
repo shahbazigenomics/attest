@@ -30,6 +30,11 @@
 #'   Default 0.05.
 #' @param target_fc the effect size the study cares about, used for the
 #'   study-level summary. Default 2 (a doubling).
+#' @param design,of_interest optional design formula and the variable being
+#'   tested. When given with `metadata`, the calculation uses the design's
+#'   effective sample size - group sizes divided by the variance inflation that
+#'   the other terms put on this effect - so a partly confounded experiment is
+#'   not credited with precision it does not have.
 #' This check reports *scope*, not a fault: it says what the data can support, so
 #' it does not lower the overall verdict of [attest()], the way a clinical report
 #' keeps its limitations section separate from its result.
@@ -38,7 +43,8 @@
 #'   the per-gene vector.
 #' @export
 attest_detectability <- function(x, group = NULL, metadata = NULL, power = 0.8,
-                                 alpha = 0.05, target_fc = 2) {
+                                 alpha = 0.05, target_fc = 2, design = NULL,
+                                 of_interest = NULL) {
 
   m <- at_as_matrix(x)
   if (is.null(m)) {
@@ -74,6 +80,21 @@ attest_detectability <- function(x, group = NULL, metadata = NULL, power = 0.8,
 
   phi <- at_dispersion_moments(norm, g)
   n_eff <- 2 / (1/n1 + 1/n2)                      # harmonic mean of the group sizes
+
+  # the design's confounding costs precision; charge it here, where precision
+  # is judged, rather than in the design check's verdict
+  vif <- at_design_vif(design, metadata, of_interest)
+  if (!is.null(vif) && !is.finite(vif)) {
+    return(at_result("UNKNOWN",
+                     "The design cannot estimate this effect at all, so there is no precision to report (see the design check).",
+                     character(0), NULL, character(0), list(n1 = n1, n2 = n2, vif = vif), kind = "scope"))
+  }
+  vif_line <- NULL
+  if (!is.null(vif) && vif > 1.05) {
+    vif_line <- sprintf("the design shares this effect with its other terms (variance inflation %.2f), so the %d + %d samples are treated as %.1f + %.1f",
+                        vif, n1, n2, n1 / vif, n2 / vif)
+    n_eff <- n_eff / vif
+  }
   n_tested <- sum(expressed)
 
   # The level each gene is actually judged at. Everyone analyses with
@@ -97,6 +118,7 @@ attest_detectability <- function(x, group = NULL, metadata = NULL, power = 0.8,
   if (!any(assessable)) assessable <- expressed
   frac_ok <- mean(mdfc[assessable] <= target_fc)
   ev <- list(dim = dim(m), n1 = n1, n2 = n2, levels = lev, power = power,
+             design_vif = if (is.null(vif)) NA_real_ else vif, n_effective = n_eff,
              alpha = alpha, per_gene_alpha = a, bonferroni_alpha = a_bonf,
              n_rejected_estimate = n_rej, n_tested = n_tested,
              mean_count = mu,
@@ -119,7 +141,8 @@ attest_detectability <- function(x, group = NULL, metadata = NULL, power = 0.8,
               n1, n2, format(n_rej, big.mark = ","), a, a_bonf)
     else
       sprintf("group sizes %d and %d; no gene survives multiple testing on these counts, so each gene is judged at the Bonferroni level p < %.2g",
-              n1, n2, a))
+              n1, n2, a),
+    vif_line)
 
   verdict <- if (frac_ok >= 0.8) "PERMITTED" else if (frac_ok >= 0.4) "CAUTION" else "NOT PERMITTED"
   headline <- switch(verdict,

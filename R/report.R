@@ -77,7 +77,7 @@ attest <- function(x, ...) {
     checks[["design"]] <- do.call(
       attest_design,
       c(list(x), list(metadata = metadata, design = design),
-        args[names(args) %in% c("of_interest", "min_effective_frac")]))
+        args[names(args) %in% "of_interest"]))
   } else {
     not_run <- c(not_run, sprintf(
       "design adequacy (is the effect estimable, and what is it worth after confounding?): %s",
@@ -90,7 +90,8 @@ attest <- function(x, ...) {
   if (!is.null(group)) {
     checks[["detectability"]] <- do.call(
       attest_detectability,
-      c(list(x), list(group = group),
+      c(list(x), list(group = group, metadata = metadata, design = design,
+                      of_interest = args$of_interest),
         args[names(args) %in% c("power", "alpha", "target_fc")]))
   } else {
     not_run <- c(not_run, paste(

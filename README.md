@@ -24,6 +24,9 @@ overall: PERMITTED
     expected when depth has not been divided out
   - variance/mean is 2.29, above the Poisson floor
 
+[identifiers] PERMITTED - The row names identify genes, one row each.
+  - all 3,000 gene rows carry Ensembl identifiers
+
 [completeness] PERMITTED - Complete: the matrix still contains genes with no reads at all.
   - 1,446 of 3,000 genes (48.2%) are zero in every sample; filtering removes exactly
     those, so they are the sign that nothing was removed
@@ -56,8 +59,8 @@ overall: PERMITTED
 
 (That run is on the 3,000-gene airway fixture shipped with the package, so the gene counts
 are smaller than a real annotation would give. Every check is also callable on its own:
-`attest_counts()`, `attest_completeness()`, `attest_identity()`, `attest_design()`,
-`attest_detectability()`.)
+`attest_counts()`, `attest_identifiers()`, `attest_completeness()`, `attest_identity()`,
+`attest_design()`, `attest_detectability()`. Some `not assessed` lines are trimmed above.)
 
 A check with nothing to work on is **named, not dropped**. `attest(counts)` on a bare matrix
 ends with:
@@ -134,7 +137,7 @@ the preconditions they reasonably assume.
 | `attest_identifiers()` | "every row is a gene, named once, from one annotation" | nothing; htseq-count's `__no_feature` row is analysed as a gene like any other |
 | `attest_completeness()` | "this matrix holds every gene the pipeline quantified" | nothing; a gene absent from the matrix is indistinguishable from a gene never expressed |
 | `attest_identity()` | "these samples are who the sample sheet says" | nothing at the count-matrix level |
-| `attest_design()` | "this design can estimate the effect I am asking for" | full-rank refusal only (DESeq2, edgeR); nothing on partial confounding or thin replication |
+| `attest_design()` | "this design can estimate the effect, and nothing in the sample sheet stands in its way" | full-rank refusal only (DESeq2, edgeR), and only for terms in the formula; nothing on columns left out of it |
 | `attest_detectability()` | "this gene did not change" | nothing retrospective; PROPER, ssizeRNA and RNASeqPower are prospective planning tools |
 
 ### How each one decides
@@ -182,9 +185,30 @@ Neither test alone works: yeast replicates reach 0.9955, so a fixed 0.99 floor c
 while a true duplicate there is only ~1.5 MAD above the median, so a cohort-relative rule
 alone misses it.
 
-**Design.** Rank first (which coefficients are not estimable, named), then variance
-inflation per coefficient of interest, reported as an effective sample size — 8 samples at
-VIF 1.33 buy the precision of 6 — then group sizes.
+**Design.** Rank first (which coefficients are not estimable, named), then group sizes,
+then the part no analysis tool can see: **the columns of the sample sheet that the formula
+leaves out**. DESeq2 only ever sees the terms it was given, so a sequencing run that holds
+every treated sample, or two libraries per donor analysed as four independent replicates,
+passes in silence. Both are caught here without any threshold on an association measure,
+because at n = 8 such measures are mostly noise:
+
+- a categorical column is flagged when every one of its values falls inside a single group
+  (it is *nested* in the condition), which is what batch confounding and repeated
+  samples from one subject both look like - the message says it cannot tell which;
+- a numeric column (RIN, concentration, date) is flagged when its ranges in the two groups
+  do not overlap at all, and the message states how often an unrelated column would do
+  that by chance: `2 / choose(n, n1)`, 1 time in 35 at 4 + 4, 1 in 10 at 3 + 3. Measured
+  over 40,000 simulated covariates: 0.0273 and 0.0986.
+
+Identifiers, constants, relabelings of the condition, a row index on a sheet sorted by
+condition, and columns computed from the counts (`sizeFactor`, `lib.size`) are skipped and
+named as skipped.
+
+Confounding *among* the formula's own terms is different: the effect is still estimated
+without bias, only less precisely. It is reported as an effective sample size - 8 samples
+at variance inflation 2.5 buy the precision of 3.2 - and charged in detectability, which
+recomputes every gene's detectable change at that size. It does not lower the verdict:
+precision is scope, not a fault.
 
 **Detectability.** For every gene, the smallest fold change this dataset could have
 detected, from a two-sample negative-binomial Wald calculation using that gene's own mean
@@ -238,9 +262,11 @@ design log records each one: what was assumed, which dataset broke it, what repl
 - Genuine salmon/kallisto estimates from an unusually even experiment can be reported as
   normalised; the message names that reading and points to `tximport`.
 - Single-cell and UMI matrices are simulated only, not yet tested on real data.
-- Partial confounding is reported as evidence but only lowers the verdict once it has cost
-  more than half the samples; a 25% loss of effective sample size prints under a
-  `PERMITTED` design.
+- A numeric sample-sheet column is tested against two-group comparisons only, and a
+  numeric column that is really a batch code (`1, 1, 2, 2, ...`) is treated as a
+  number, not as groups; code batches as text to get the nesting test.
+- Detectability's effective sample size charges for confounding but not for the precision
+  a paired or blocked design gains, so for such designs it errs conservative.
 - Detectability is an approximation to what DESeq2 or edgeR would achieve, not a
   reimplementation of either; it is calibrated against simulation, not against their output.
 - Sex inference and the DNA-RNA question: the markers are human, and no genotype

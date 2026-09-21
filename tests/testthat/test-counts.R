@@ -205,11 +205,13 @@ test_that("design adequacy: estimability, partial confounding, replication", {
   expect_equal(conf$verdict, "NOT PERMITTED")
   expect_true(length(conf$measurements$not_estimable) >= 1)
 
-  # partial confounding: nothing else reports this at all
+  # partial confounding: nothing else reports this at all. It costs precision,
+  # not validity, so it is reported and carried into detectability, but it no
+  # longer lowers the verdict (scope, not fault - see test-design.R)
   part <- attest_design(m, partial, ~ batch + cond)
   expect_equal(unname(round(part$measurements$max_vif, 2)), 2.5)
   expect_equal(unname(round(part$measurements$effective_n, 1)), 3.2)
-  expect_equal(part$verdict, "CAUTION")
+  expect_equal(part$verdict, "PERMITTED")
 
   # replication
   k <- c(1, 2, 5, 6)
