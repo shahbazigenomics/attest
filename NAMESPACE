@@ -2,6 +2,7 @@
 # roxygen2::roxygenise(), which also writes the man/ pages.
 
 export(attest)
+export(attest_file)
 export(attest_counts)
 export(attest_completeness)
 export(attest_identity)
@@ -15,3 +16,4 @@ S3method(print, attest_report)
 importFrom(stats, median, quantile, var, qnorm, pnorm, p.adjust, lm.fit,
            model.matrix, reformulate, terms, cor, mad)
 importFrom(methods, existsMethod)
+importFrom(utils, read.table, head)

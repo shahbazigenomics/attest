@@ -8,7 +8,11 @@ behind each verdict, and says which claims your inputs could not answer.
 
 ```r
 library(attest)
-attest(counts, metadata = colData, design = ~ cell + dex, of_interest = "dex")
+
+attest(dds)                 # a DESeqDataSet already carries the counts, the
+                            # sample sheet and the design - nothing else needed
+attest_file("counts.txt")   # or the file you were sent, before it is anything else
+attest(counts, metadata = colData, design = ~ cell + dex)
 ```
 
 ```
@@ -55,6 +59,36 @@ are smaller than a real annotation would give. Every check is also callable on i
 `attest_counts()`, `attest_completeness()`, `attest_identity()`, `attest_design()`,
 `attest_detectability()`.)
 
+A check with nothing to work on is **named, not dropped**. `attest(counts)` on a bare matrix
+ends with:
+
+```
+-- not run, so the verdict above does not cover it --
+  - design adequacy (is the effect estimable, and what is it worth after confounding?):
+    no sample sheet - pass metadata = <data.frame> and design = ~ <terms>, or hand
+    attest() a DESeqDataSet
+  - detectability (for which genes could a change have been seen at all?): the two
+    groups being compared are not known - pass group = <factor>
+```
+
+## Getting your counts in
+
+`attest()` takes a matrix, a `data.frame`, a `SummarizedExperiment`, a `DESeqDataSet`, a
+`DGEList` or a `tximport` list, and reads the sample sheet, the design formula and the
+grouping straight out of the object when it has them. Anything you pass explicitly wins.
+
+`attest_file()` is for counts that are still a file - a featureCounts table, a GEO
+supplementary file, a CSV from a collaborator. It reports how it read the file as the
+report's first check: the separator, `#` header lines, gzip, which column held the gene
+identifiers, and any duplicated identifiers.
+
+One of those matters more than it looks. featureCounts writes `Chr`, `Start`, `End`,
+`Strand` and `Length` between the identifier and the samples. `Start`, `End` and `Length`
+are numeric, so a matrix built by hand from that file has three extra "libraries" in it -
+and **every check in this package still returns PERMITTED**, because nothing in the numbers
+gives it away once the column names are gone. It is catchable at the file and nowhere else,
+which is the argument for reading the file here rather than before.
+
 ## Why it exists
 
 Count models assume counts, and count-based designs assume the effect is separable from
@@ -91,10 +125,11 @@ This is not a criticism of DESeq2, edgeR or limma. They document that they expec
 counts and a full-rank design; they are not built to police provenance. `attest` checks
 the preconditions they reasonably assume.
 
-## The five checks
+## The checks
 
 | Check | The claim it adjudicates | What the tools do about it |
 |---|---|---|
+| `attest_file()` | "this file was read as the count matrix it is" | nothing; annotation columns read as samples are invisible afterwards |
 | `attest_counts()` | "this matrix holds raw counts" | DESeq2 rejects non-integers only; rounding defeats it; edgeR and limma silent |
 | `attest_completeness()` | "this matrix holds every gene the pipeline quantified" | nothing; a gene absent from the matrix is indistinguishable from a gene never expressed |
 | `attest_identity()` | "these samples are who the sample sheet says" | nothing at the count-matrix level |

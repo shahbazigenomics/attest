@@ -2,4 +2,5 @@
 # Usage, from the attest project:  source("run_tests.R")
 if (!requireNamespace("testthat", quietly = TRUE)) stop('install.packages("testthat") first')
 for (f in list.files("R", full.names = TRUE)) source(f)
-testthat::test_file("tests/testthat/test-counts.R")
+for (f in list.files("tests/testthat", pattern = "^test-.*\\.R$", full.names = TRUE))
+  testthat::test_file(f)
