@@ -29,8 +29,10 @@ test_that("featureCounts annotation columns are removed, not counted as samples"
                     Chr = "1", Start = 1:500, End = 501:1000, Strand = "+",
                     Length = round(runif(500, 500, 8000)),
                     m, check.names = FALSE)
-  writeLines("# Program:featureCounts v2.0.6; Command:\"featureCounts\"", p)
-  utils::write.table(out, p, sep = "\t", quote = FALSE, row.names = FALSE, append = TRUE)
+  writeLines(c("# Program:featureCounts v2.0.6; Command:\"featureCounts\"",
+               paste(names(out), collapse = "\t")), p)
+  utils::write.table(out, p, sep = "\t", quote = FALSE, row.names = FALSE,
+                     col.names = FALSE, append = TRUE)
 
   r <- attest_file(p)
   expect_equal(r$checks$input$measurements$n_comment_lines, 1L)

@@ -35,6 +35,8 @@ no inputs is named under "not run" rather than quietly left out of the report.
 Checks currently implemented:
 \itemize{
 \item value scale - is this a raw count matrix? (\code{attest_counts()})
+\item identifiers - is every row a gene, named once, from one annotation?
+(\code{attest_identifiers()}; needs row names)
 \item completeness - has the matrix been filtered before you got it?
 (\code{attest_completeness()})
 \item identity - do the samples match their labels, and is any library present
