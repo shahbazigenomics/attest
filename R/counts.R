@@ -179,14 +179,18 @@ at_as_matrix <- function(x) {
   } else if (is.data.frame(x)) {
     num <- vapply(x, is.numeric, logical(1))
     if (any(num)) m <- as.matrix(x[, num, drop = FALSE])
-  } else if (!is.null(attr(class(x), "package")) || isS4(x)) {
+  } else if (methods::is(x, "SummarizedExperiment")) {
+    # DESeqDataSet and RangedSummarizedExperiment inherit from this. is() follows
+    # inheritance; existsMethod("assay", class(x)) - the first version - does
+    # not, so every real DESeqDataSet came back unreadable.
     m <- tryCatch({
-      if (methods::existsMethod("assay", class(x))) as.matrix(SummarizedExperiment::assay(x))
-      else if (!is.null(x$counts)) as.matrix(x$counts)  # DGEList
-      else NULL
+      an <- SummarizedExperiment::assayNames(x)
+      as.matrix(SummarizedExperiment::assay(x, if ("counts" %in% an) "counts" else 1L))
     }, error = function(e) NULL)
-  } else if (is.list(x) && !is.null(x$counts)) {
-    m <- as.matrix(x$counts)
+  } else if (is.list(x) || isS4(x)) {
+    # DGEList (an S4 class built on a list) and tximport's plain list
+    m <- tryCatch(if (!is.null(x$counts)) as.matrix(x$counts) else NULL,
+                  error = function(e) NULL)
   }
   if (is.null(m) || !is.numeric(m)) NULL else m
 }

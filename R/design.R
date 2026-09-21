@@ -32,9 +32,13 @@
 attest_design <- function(x, metadata, design, of_interest = NULL) {
 
   m <- at_as_matrix(x)
-  if (is.null(m) || is.null(metadata) || missing(design) || !inherits(design, "formula")) {
+  if (is.null(m)) {
+    return(at_result("UNKNOWN", "The input could not be read as a numeric matrix.",
+                     character(0), NULL, character(0), list(input_class = class(x)[1])))
+  }
+  if (is.null(metadata) || missing(design) || !inherits(design, "formula")) {
     return(at_result("UNKNOWN",
-                     "Design check needs counts, a sample sheet and a design formula.",
+                     "Design check needs a sample sheet and a design formula.",
                      character(0), NULL, character(0), list()))
   }
   metadata <- as.data.frame(metadata)

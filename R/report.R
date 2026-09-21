@@ -60,12 +60,14 @@ attest <- function(x, ...) {
 
   # named rows are what the identifier check works on; numbered rows are a
   # missing input, not a fault, so they belong in "not run"
-  if (!is.null(rownames(at_as_matrix(x)))) {
+  mat <- at_as_matrix(x)
+  if (!is.null(rownames(mat))) {
     checks[["identifiers"]] <- attest_identifiers(x)
   } else {
     not_run <- c(not_run, paste(
       "identifiers (is every row a gene, named once, from one annotation?):",
-      "the matrix has no row names - read the counts with attest_file(), or set rownames(x)"))
+      if (is.null(mat)) sprintf("the counts could not be read from this %s", class(x)[1])
+      else "the matrix has no row names - read the counts with attest_file(), or set rownames(x)"))
   }
 
   checks[["completeness"]] <- do.call(attest_completeness,

@@ -10,7 +10,10 @@ at_from_object <- function(x) {
   if (is.null(x)) return(out)
 
   # --- DGEList (and anything else with a $samples table) -------------------
-  if (!isS4(x) && is.list(x) && is.data.frame(x$samples)) {
+  # edgeR's DGEList is an S4 class that contains a list, so isS4() is TRUE for
+  # it; testing is.list() first is what lets a real one through
+  samples <- if (is.list(x) || isS4(x)) tryCatch(x$samples, error = function(e) NULL) else NULL
+  if (is.data.frame(samples)) {
     if (nrow(x$samples)) out$metadata <- x$samples
     g <- x$samples$group
     if (!is.null(g) && nlevels(droplevels(as.factor(g))) >= 2) out$group <- g
