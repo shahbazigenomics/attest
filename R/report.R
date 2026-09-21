@@ -15,6 +15,8 @@
 #'
 #' Checks currently implemented:
 #' * value scale - is this a raw count matrix? (`attest_counts()`)
+#' * identifiers - is every row a gene, named once, from one annotation?
+#'   (`attest_identifiers()`; needs row names)
 #' * completeness - has the matrix been filtered before you got it?
 #'   (`attest_completeness()`)
 #' * identity - do the samples match their labels, and is any library present
@@ -53,12 +55,23 @@ attest <- function(x, ...) {
     sprintf("%s taken from the %s", paste(taken, collapse = " and "), from$source) else NULL
 
   id_args <- args[names(args) %in% c("sex_col", "dup_floor")]
-  checks <- list(
-    "value scale"  = attest_counts(x),
-    "completeness" = do.call(attest_completeness, c(list(x), args[names(args) %in% "n_expected"])),
-    "identity"     = do.call(attest_identity, c(list(x), list(metadata = metadata), id_args)))
-
+  checks <- list("value scale" = attest_counts(x))
   not_run <- character(0)
+
+  # named rows are what the identifier check works on; numbered rows are a
+  # missing input, not a fault, so they belong in "not run"
+  if (!is.null(rownames(at_as_matrix(x)))) {
+    checks[["identifiers"]] <- attest_identifiers(x)
+  } else {
+    not_run <- c(not_run, paste(
+      "identifiers (is every row a gene, named once, from one annotation?):",
+      "the matrix has no row names - read the counts with attest_file(), or set rownames(x)"))
+  }
+
+  checks[["completeness"]] <- do.call(attest_completeness,
+                                      c(list(x), args[names(args) %in% "n_expected"]))
+  checks[["identity"]] <- do.call(attest_identity,
+                                  c(list(x), list(metadata = metadata), id_args))
 
   if (!is.null(metadata) && !is.null(design)) {
     checks[["design"]] <- do.call(

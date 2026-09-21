@@ -131,6 +131,7 @@ the preconditions they reasonably assume.
 |---|---|---|
 | `attest_file()` | "this file was read as the count matrix it is" | nothing; annotation columns read as samples are invisible afterwards |
 | `attest_counts()` | "this matrix holds raw counts" | DESeq2 rejects non-integers only; rounding defeats it; edgeR and limma silent |
+| `attest_identifiers()` | "every row is a gene, named once, from one annotation" | nothing; htseq-count's `__no_feature` row is analysed as a gene like any other |
 | `attest_completeness()` | "this matrix holds every gene the pipeline quantified" | nothing; a gene absent from the matrix is indistinguishable from a gene never expressed |
 | `attest_identity()` | "these samples are who the sample sheet says" | nothing at the count-matrix level |
 | `attest_design()` | "this design can estimate the effect I am asking for" | full-rank refusal only (DESeq2, edgeR); nothing on partial confounding or thin replication |
@@ -148,6 +149,25 @@ the preconditions they reasonably assume.
 | median-of-ratios size factors much flatter than the column sums | already normalised |
 | negatives, or non-integers with a maximum under 30 | log scale (vst, rlog, log-CPM) |
 | regular gaps between small values | scaled and rounded; the gap size recovers the original library size |
+
+**Identifiers.** Three faults, none of them visible in the numbers. htseq-count appends
+`__no_feature`, `__ambiguous`, `__too_low_aQual`, `__not_aligned` and
+`__alignment_not_unique`; STAR's `ReadsPerGene.out.tab` opens with four `N_*` rows. Left
+in, they are analysed as genes, and library sizes, size factors and the multiple-testing
+denominator are all computed partly from them. How much that costs depends on the run, so
+the check does not quote a figure: it measures the share those rows hold in *your*
+libraries and reports it. Then Excel: `SEPT1` becomes
+`1-Sep`, `MARCH1` becomes `1-Mar`, which is why HGNC renamed both families in 2020
+(`SEPTIN`, `MARCHF`). Then identifiers from two sources - some Ensembl IDs versioned and
+some bare, or Ensembl IDs mixed with symbols - where a join keeps one group and drops the
+other without saying so.
+
+Two rules here were narrowed by the fixtures before they ever ran on real user data. A
+trailing `.N` is not evidence of an Ensembl version: every fission yeast systematic name
+ends that way (`SPAC212.09c`, `SPAC977.03`), so the rule requires an Ensembl stem. And an
+all-digit identifier is not an Excel serial number, because Entrez gene IDs are all digits;
+only the textual date forms are reported. ERCC and SIRV spike-ins are counted separately,
+so they do not look like a second annotation.
 
 **Completeness.** A complete matrix keeps genes that are zero in every sample; filtering
 removes exactly those, and the floor it leaves on the row totals reveals the threshold

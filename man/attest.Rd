@@ -8,7 +8,7 @@ attest(x, ...)
 }
 \arguments{
 \item{x}{counts: matrix, data.frame, SummarizedExperiment, DESeqDataSet or
-DGEList.}
+DGEList. For counts in a file, see \code{\link[=attest_file]{attest_file()}}.}
 
 \item{...}{passed to individual checks: \code{n_expected} (completeness),
 \code{metadata}, \code{sex_col}, \code{dup_floor} (identity), \code{design}, \code{of_interest}
@@ -20,10 +20,18 @@ object of class "attest_report".
 \description{
 Runs every available check on a count matrix and returns one report: an
 overall verdict, each check's verdict with its evidence, and everything the
-inputs could not answer. Individual checks stay callable on their own
+inputs could not answer. The overall verdict comes from the checks that look
+for faults; \code{detectability} reports scope (what the data can support) and is
+shown separately without changing it. Individual checks stay callable on their own
 (\code{attest_counts()}); this is the one call that runs them all.
 }
 \details{
+If \code{x} is a \code{DESeqDataSet}, a \code{SummarizedExperiment} or a \code{DGEList}, the
+sample sheet, the design formula and the grouping are taken from the object,
+so \code{attest(dds)} runs all five checks with nothing else supplied. Anything
+passed explicitly wins over what the object carries. A check that still has
+no inputs is named under "not run" rather than quietly left out of the report.
+
 Checks currently implemented:
 \itemize{
 \item value scale - is this a raw count matrix? (\code{attest_counts()})
@@ -32,11 +40,8 @@ Checks currently implemented:
 \item identity - do the samples match their labels, and is any library present
 twice? (\code{attest_identity()})
 \item design - can the design estimate the effect, and at what effective sample
-size? (\code{attest_design()}; runs only when \code{metadata} and \code{design} are given)
+size? (\code{attest_design()}; needs a sample sheet and a design formula)
 \item detectability - for which genes could a change have been seen at all?
-(\code{attest_detectability()}; runs when \code{group}, or a two-level \code{of_interest},
-is available)
+(\code{attest_detectability()}; needs the two groups being compared)
 }
-
-All five planned checks are implemented.
 }

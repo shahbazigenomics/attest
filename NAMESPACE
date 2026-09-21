@@ -4,6 +4,7 @@
 export(attest)
 export(attest_file)
 export(attest_counts)
+export(attest_identifiers)
 export(attest_completeness)
 export(attest_identity)
 export(attest_design)

@@ -28,7 +28,10 @@ the two groups being compared, or the name of a column in \code{metadata}.}
 Default 0.05.}
 
 \item{target_fc}{the effect size the study cares about, used for the
-study-level summary. Default 2 (a doubling).}
+study-level summary. Default 2 (a doubling).
+This check reports \emph{scope}, not a fault: it says what the data can support, so
+it does not lower the overall verdict of \code{\link[=attest]{attest()}}, the way a clinical report
+keeps its limitations section separate from its result.}
 }
 \value{
 object of class "attest_check"; \verb{$measurements$min_detectable_fc} is
