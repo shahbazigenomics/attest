@@ -9,3 +9,8 @@ doc
 Meta
 *.Rcheck
 attest_*.tar.gz
+validation/strand_sim/idx
+validation/strand_sim/star
+validation/strand_sim/fc
+validation/strand_sim/fastq
+validation/strand_sim/ref

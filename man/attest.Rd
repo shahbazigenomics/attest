@@ -12,7 +12,9 @@ DGEList. For counts in a file, see \code{\link[=attest_file]{attest_file()}}.}
 
 \item{...}{passed to individual checks: \code{n_expected} (completeness),
 \code{metadata}, \code{sex_col}, \code{dup_floor} (identity), \code{design}, \code{of_interest}
-(design), \code{group}, \code{target_fc}, \code{power} (detectability).}
+(design), \code{group}, \code{target_fc}, \code{power} (detectability), \code{strandedness}
+(paths to STAR \code{ReadsPerGene.out.tab} files or featureCounts output; see
+\code{\link[=attest_strandedness]{attest_strandedness()}}).}
 }
 \value{
 object of class "attest_report".

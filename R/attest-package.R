@@ -11,11 +11,15 @@
 #' Start with [attest()] on a matrix, `SummarizedExperiment`, `DESeqDataSet` or
 #' `DGEList`, or [attest_file()] on a count file. The individual checks are
 #' [attest_counts()], [attest_identifiers()], [attest_completeness()],
-#' [attest_identity()], [attest_design()] and [attest_detectability()].
+#' [attest_identity()], [attest_design()], [attest_detectability()] and
+#' [attest_strandedness()].
 #'
 #' The package ships `extdata/fixtures.rds`: 3,000-gene subsets of three public
 #' datasets - airway (human, 8 samples), pasilla (fly, 7) and fission (yeast,
 #' 36) - as raw count matrices, used by the examples, the tests and the vignette.
+#' `extdata/strand/` holds STAR `ReadsPerGene.out.tab` files and featureCounts
+#' output for libraries of known protocol, simulated from a synthetic genome and
+#' counted with the real tools; they back [attest_strandedness()].
 #'
 #' @keywords internal
 "_PACKAGE"

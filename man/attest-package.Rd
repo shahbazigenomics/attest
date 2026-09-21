@@ -17,11 +17,15 @@ result with a reason.
 Start with \code{\link[=attest]{attest()}} on a matrix, \code{SummarizedExperiment}, \code{DESeqDataSet} or
 \code{DGEList}, or \code{\link[=attest_file]{attest_file()}} on a count file. The individual checks are
 \code{\link[=attest_counts]{attest_counts()}}, \code{\link[=attest_identifiers]{attest_identifiers()}}, \code{\link[=attest_completeness]{attest_completeness()}},
-\code{\link[=attest_identity]{attest_identity()}}, \code{\link[=attest_design]{attest_design()}} and \code{\link[=attest_detectability]{attest_detectability()}}.
+\code{\link[=attest_identity]{attest_identity()}}, \code{\link[=attest_design]{attest_design()}}, \code{\link[=attest_detectability]{attest_detectability()}} and
+\code{\link[=attest_strandedness]{attest_strandedness()}}.
 
 The package ships \code{extdata/fixtures.rds}: 3,000-gene subsets of three public
 datasets - airway (human, 8 samples), pasilla (fly, 7) and fission (yeast,
 36) - as raw count matrices, used by the examples, the tests and the vignette.
+\verb{extdata/strand/} holds STAR \code{ReadsPerGene.out.tab} files and featureCounts
+output for libraries of known protocol, simulated from a synthetic genome and
+counted with the real tools; they back \code{\link[=attest_strandedness]{attest_strandedness()}}.
 }
 \author{
 \strong{Maintainer}: Amir Shahbazi \email{amirshahbazi580@gmail.com}

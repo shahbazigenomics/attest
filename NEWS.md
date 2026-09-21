@@ -18,3 +18,8 @@ First release.
   variable globin was a false alarm under the old rule). The new measure also
   catches normalised matrices down to 30k reads per sample, where the old one
   failed below 1M.
+* `attest_strandedness()`: the library protocol from STAR's `ReadsPerGene.out.tab`,
+  and which of its columns a count matrix was built from; a featureCounts
+  `.summary` raises a collapse of assigned reads and otherwise says it cannot
+  confirm the strand setting. `attest(x, strandedness = files)` adds it to the
+  report, and `attest_file()` picks up the summary beside featureCounts output.

@@ -16,6 +16,9 @@
 #'   `Length`. Three of them are numeric and would otherwise be read as three
 #'   extra samples, a mistake no check on the matrix can see afterwards
 #' * duplicated gene identifiers
+#' * for featureCounts output, the `.summary` file beside it, which goes to
+#'   [attest_strandedness()] together with the `-s` setting recorded in the
+#'   file's first line
 #'
 #' @param path path to the file. `.gz` is read directly.
 #' @param sep field separator. `NULL` (default) detects it from the file.
@@ -39,7 +42,13 @@ attest_file <- function(path, sep = NULL, ...) {
                           source_note = NULL),
                      class = "attest_report"))
   }
-  rep <- attest(read$counts, ...)
+  args <- list(...)
+  # featureCounts writes <file>.summary beside its counts; use it unless told otherwise
+  if (is.null(args$strandedness) && isTRUE(read$check$measurements$featurecounts)) {
+    summ <- paste0(path, ".summary")
+    if (file.exists(summ)) args$strandedness <- c(path, summ)
+  }
+  rep <- do.call(attest, c(list(read$counts), args))
   rep$checks <- c(list(input = read$check), rep$checks)
   kinds <- vapply(rep$checks, at_kind, character(1))
   rep$verdict <- at_worst(vapply(rep$checks[kinds == "fault"], function(c) c$verdict, character(1)))
@@ -107,7 +116,8 @@ at_read_counts <- function(path, sep = NULL) {
                         if (sep == "\t") "tab" else sep), list(sep = sep)))
 
   ev <- list(path = path, sep = sep, n_comment_lines = n_comment,
-             columns_read = ncol(df), rows_read = nrow(df))
+             columns_read = ncol(df), rows_read = nrow(df),
+             featurecounts = grepl("^# Program:featureCounts", head_lines[1]))
   lines <- character(0)
   na <- character(0)
   verdict <- "PERMITTED"

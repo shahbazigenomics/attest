@@ -30,7 +30,9 @@
 #'   DGEList. For counts in a file, see [attest_file()].
 #' @param ... passed to individual checks: `n_expected` (completeness),
 #'   `metadata`, `sex_col`, `dup_floor` (identity), `design`, `of_interest`
-#'   (design), `group`, `target_fc`, `power` (detectability).
+#'   (design), `group`, `target_fc`, `power` (detectability), `strandedness`
+#'   (paths to STAR `ReadsPerGene.out.tab` files or featureCounts output; see
+#'   [attest_strandedness()]).
 #' @return object of class "attest_report".
 #' @examples
 #' fx <- readRDS(system.file("extdata", "fixtures.rds", package = "attest"))
@@ -82,6 +84,20 @@ attest <- function(x, ...) {
                                       c(list(x), args[names(args) %in% "n_expected"]))
   checks[["identity"]] <- do.call(attest_identity,
                                   c(list(x), list(metadata = metadata), id_args))
+
+  # strandedness needs the files the counting step wrote; when they cannot
+  # answer (a single featureCounts summary usually cannot), that is a missing
+  # input, not a fault, so it goes to "not run"
+  if (!is.null(args$strandedness)) {
+    sc <- attest_strandedness(args$strandedness, counts = x)
+    if (identical(sc$verdict, "UNKNOWN")) {
+      not_run <- c(not_run, paste0("strandedness (were the reads counted on the right strand?): ",
+                                   sc$headline,
+                                   if (length(sc$not_assessed)) paste0(" - ", sc$not_assessed[1]) else ""))
+    } else {
+      checks[["strandedness"]] <- sc
+    }
+  }
 
   if (!is.null(metadata) && !is.null(design)) {
     checks[["design"]] <- do.call(

@@ -37,6 +37,9 @@ unnamed, or already the row names
 \code{Length}. Three of them are numeric and would otherwise be read as three
 extra samples, a mistake no check on the matrix can see afterwards
 \item duplicated gene identifiers
+\item for featureCounts output, the \code{.summary} file beside it, which goes to
+\code{\link[=attest_strandedness]{attest_strandedness()}} together with the \code{-s} setting recorded in the
+file's first line
 }
 }
 \examples{

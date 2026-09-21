@@ -134,6 +134,7 @@ the preconditions they reasonably assume.
 |---|---|---|
 | `attest_file()` | "this file was read as the count matrix it is" | nothing; annotation columns read as samples are invisible afterwards |
 | `attest_counts()` | "this matrix holds raw counts" | DESeq2 rejects non-integers only; rounding defeats it; edgeR and limma silent |
+| `attest_strandedness()` | "the reads were counted on the strand the library was made on" | salmon and nf-core detect it from reads; nothing checks a count table someone hands you |
 | `attest_identifiers()` | "every row is a gene, named once, from one annotation" | nothing; htseq-count's `__no_feature` row is analysed as a gene like any other |
 | `attest_completeness()` | "this matrix holds every gene the pipeline quantified" | nothing; a gene absent from the matrix is indistinguishable from a gene never expressed |
 | `attest_identity()` | "these samples are who the sample sheet says" | nothing at the count-matrix level |
@@ -171,6 +172,28 @@ ends that way (`SPAC212.09c`, `SPAC977.03`), so the rule requires an Ensembl ste
 all-digit identifier is not an Excel serial number, because Entrez gene IDs are all digits;
 only the textual date forms are reported. ERCC and SIRV spike-ins are counted separately,
 so they do not look like a second annotation.
+
+**Strandedness.** A stranded library counted on the wrong strand keeps only the reads that
+fall on antisense-overlapping genes - a tenth of the data or less, silently. Nothing in the
+matrix shows it; the evidence is in the files counting writes beside it.
+
+- **STAR `ReadsPerGene.out.tab`** is conclusive: it holds unstranded, forward and reverse
+  counts, and forward / (forward + reverse) gives the protocol - near 1 forward, near 0
+  reverse (dUTP), 0.5 unstranded. Pass the count matrix too and each of its columns is
+  matched exactly to the STAR column it came from; the wrong strand is NOT PERMITTED.
+- **A featureCounts `.summary`** is not, and the check says so. The wrong strand collapses
+  the assigned share, but so do reads outside the annotation; and an unstranded library
+  counted as stranded keeps about half its reads assigned - an ordinary-looking run that has
+  thrown away half the data. So a summary raises a collapse, naming every explanation, and
+  otherwise reports that it cannot confirm the setting. `attest_file()` finds the summary
+  beside featureCounts output and reads the `-s` setting from the command line featureCounts
+  records in the file.
+
+Calibrated on libraries of known protocol simulated from a synthetic genome and counted with
+real STAR 2.7.11b and featureCounts 2.0.6 (`validation/strand_sim/`): forward shares 0.91,
+0.07-0.10 and 0.50; wrong-strand featureCounts runs 10-11% assigned against 40% for a correct
+run with 60% background and 55-57% for the unstranded trap. The cut-offs are the ones
+conventionally applied to RSeQC's `infer_experiment.py`, not tuned to these files.
 
 **Completeness.** A complete matrix keeps genes that are zero in every sample; filtering
 removes exactly those, and the floor it leaves on the row totals reveals the threshold
@@ -249,7 +272,7 @@ pipeline step that acts on the verdict.
 - **Detectability calibrated by simulation**: data generated with exactly the fold change
   the check calls detectable at 80% power was detected 78-84% of the time, at n = 3, 4, 6
   and 10 per group.
-- **254 assertions** in the test suite, run against 3,000-gene fixtures shipped with the
+- **281 assertions** in the test suite, run against 3,000-gene fixtures shipped with the
   package, so the tests need no Bioconductor data packages.
 
 Several rules above replaced earlier ones that real data falsified: an FPKM rule that
@@ -283,6 +306,9 @@ design log records each one: what was assumed, which dataset broke it, what repl
   a paired or blocked design gains, so for such designs it errs conservative.
 - Detectability is an approximation to what DESeq2 or edgeR would achieve, not a
   reimplementation of either; it is calibrated against simulation, not against their output.
+- Strandedness is calibrated on simulated libraries, not field data. The synthetic genome has
+  far more antisense overlap than a real one, so real stranded libraries should separate
+  further from 0.5 than these did - but that is an expectation, not yet a measurement.
 - Sex inference and the DNA-RNA question: the markers are human, and no genotype
   comparison is attempted. For that, run somalier or NGSCheckMate on the BAMs.
 
