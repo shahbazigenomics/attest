@@ -47,6 +47,8 @@ ok(row("GSE900013")$match_how == "title" && row("GSE900013")$n_matched == 4 && r
 ok(row("GSE900014")$match_how == "correlation" && row("GSE900014")$n_matched == 8 && row("GSE900014")$truth_value == "depth removed" &&
    row("GSE900014")$v_value == "NOT PERMITTED", "14 FPKM, unknown column names: matched by gene-centred correlation, truth depth removed, caught")
 ok(row("GSE900015")$v_input == "NOT PERMITTED" && row("GSE900015")$truth_value == "raw counts", "15 spreadsheet totals row: attest NOT PERMITTED (input)")
+ok(isTRUE(row("GSE900016")$completeness_restricted) && row("GSE900016")$truth_completeness == "complete",
+   "16 protein-coding-only reference, otherwise complete: truth complete once restricted to protein-coding genes")
 
 # NCBI accepts the counts filter but ignores it (as on the first real run):
 # the frame falls back to all human expression-by-sequencing series
@@ -63,18 +65,22 @@ net$map[[pk]] <- file.path(dirname(net$map[[grep("annot\\.tsv\\.gz$", names(net$
 ok(startsWith(process_series("GSE900001")$status, "unavailable"), "bot check on the download page: 'unavailable' (retried), not 'no NCBI counts'")
 net$map[[pk]] <- keep
 
-# NCBI answers the annotation request with a bot-check page, already cached
-# from an earlier run: the page is not used, and NCBI Gene's table stands in
-good <- net$annot; net$annot <- NULL
-real <- net$map[[grep("annot\\.tsv\\.gz$", names(net$map), value = TRUE)[1]]]
-for (k in grep("annot\\.tsv\\.gz$", names(net$map), value = TRUE)) net$map[[k]] <- file.path(dirname(real), "captcha.html")
-invisible(file.copy(file.path(dirname(real), "captcha.html"), file.path(study$cache, "ncbi_annotation.tsv.gz"), overwrite = TRUE))
+# GEO's own annotation is wired to a bot-check page by default in this mock
+# (matching every real run so far - see build_mock.R), so net$annot is
+# already the NCBI Gene fallback by the time stage_run() finishes. This
+# checks that fallback directly against GEO's own file (read straight off
+# disk, bypassing the mock's bot-check), and that a stale bad copy already
+# sitting in the cache from an earlier run is detected and not reused.
+good <- read_annot(file.path(tmp, "web", "annot.tsv.gz"))
+net$annot <- NULL
+page <- net$map[[grep("annot\\.tsv\\.gz$", names(net$map), value = TRUE)[1]]]
+invisible(file.copy(page, file.path(study$cache, "ncbi_annotation.tsv.gz"), overwrite = TRUE))
 fb <- get_annot(ncbi_counts_urls("GSE900001")$annot)
 ok(!file.exists(file.path(study$cache, "ncbi_annotation.tsv.gz")) && identical(fb$GeneID, good$GeneID) &&
    identical(fb$Symbol, good$Symbol) && identical(ifelse(is.na(fb$Ensembl), NA, fb$Ensembl), ifelse(is.na(good$Ensembl) | good$Ensembl == "-", NA, good$Ensembl)),
    "bot-check page instead of the annotation: not cached, NCBI Gene table used, same genes")
-ok(looks_like_page(file.path(dirname(real), "captcha.html")) && !looks_like_page(real), "a web page is told apart from a data file")
-net$annot <- good
+ok(looks_like_page(page) && !looks_like_page(file.path(tmp, "web", "annot.tsv.gz")), "a web page is told apart from a data file")
+net$annot <- fb
 
 cons <- utils::read.csv(file.path(study$results, "consequence.csv"))
 c2 <- cons[cons$gse == "GSE900002", ]

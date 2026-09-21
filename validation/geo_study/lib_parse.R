@@ -85,6 +85,7 @@ read_annot <- function(path) {
   data.frame(GeneID = as.character(a[[gid]]),
              Symbol = if (!is.na(sym)) as.character(a[[sym]]) else NA_character_,
              Ensembl = if (!is.na(ens)) sub("\\.[0-9]+$", "", as.character(a[[ens]])) else NA_character_,
+             Type = NA_character_,   # GEO's own annotation carries no gene-type column
              stringsAsFactors = FALSE)
 }
 
@@ -95,7 +96,11 @@ read_gene_info <- function(path) {
   a <- read_tsv_gz(path); names(a) <- clean_names(names(a))
   ens <- regmatches(a$dbXrefs, regexpr("Ensembl:ENSG[0-9]+", a$dbXrefs))
   e <- rep(NA_character_, nrow(a)); e[grepl("Ensembl:ENSG[0-9]+", a$dbXrefs)] <- sub("^Ensembl:", "", ens)
-  data.frame(GeneID = as.character(a$GeneID), Symbol = as.character(a$Symbol), Ensembl = e,
+  # type_of_gene ("protein-coding", "ncRNA", "pseudo", ...): completeness
+  # truth needs it (see truth_completeness); absent only if NCBI's own format
+  # ever changes, so this degrades to "unavailable" rather than erroring
+  ty <- if ("type_of_gene" %in% names(a)) as.character(a$type_of_gene) else rep(NA_character_, nrow(a))
+  data.frame(GeneID = as.character(a$GeneID), Symbol = as.character(a$Symbol), Ensembl = e, Type = ty,
              stringsAsFactors = FALSE)
 }
 

@@ -30,8 +30,17 @@ build_mock <- function(dir, raw_rds = "validation/raw_matrices.rds",
                       Symbol = c(sym_a, ksym),
                       Description = "mock", EnsemblGeneID = c(ens, rep("", length(ksym))),
                       stringsAsFactors = FALSE)
+  # a fixed ~30% of the airway genes are "protein-coding", the rest "ncRNA" -
+  # for the case 16 protein-coding-only reference and the gene_info fallback
+  pc_idx <- seq_len(floor(0.3 * length(ens)))
+  gene_type <- rep("ncRNA", nrow(annot)); gene_type[pc_idx] <- "protein-coding"
   tsvgz(annot, P("annot.tsv.gz"))
-  put(paste0(ncbi, "/geo/download/?type=rnaseq_counts&format=file&file=Human.GRCh38.p13.annot.tsv.gz"), P("annot.tsv.gz"))
+  # GEO's own annotation download has been bot-checked on every real run so
+  # far, so the URL is wired straight to the bot-check page by default here
+  # too - get_annot() then always takes the NCBI Gene fallback, as it does in
+  # practice. The real file is still written above (P("annot.tsv.gz")) so a
+  # test can read it directly to check the fallback agrees with it.
+  put(paste0(ncbi, "/geo/download/?type=rnaseq_counts&format=file&file=Human.GRCh38.p13.annot.tsv.gz"), P("captcha.html"))
   gid_of_sym <- setNames(as.character(annot$GeneID), annot$Symbol)
 
   # NCBI's raw counts: same reads, another pipeline
@@ -162,6 +171,13 @@ build_mock <- function(dir, raw_rds = "validation/raw_matrices.rds",
   foot <- ex[1:3, ]; foot[] <- NA; foot$gene_id[] <- NA; foot[3, -1] <- colSums(airway)
   writexl::write_xlsx(rbind(ex, foot), P("a15.xlsx"))
   series("GSE900015", gsm_a(15), titles_a, list(GSE900015_counts.xlsx = P("a15.xlsx")), R = R_a)
+  # 16. (GSE218546 shape) a protein-coding-only reference, otherwise complete
+  #     (every protein-coding gene kept, including the zero ones) - unrestricted,
+  #     the completeness truth would see ~70% of all-zero NCBI genes missing
+  #     (the non-coding ones this reference never had) and call it "filtered"
+  m <- airway[pc_idx, , drop = FALSE]; colnames(m) <- gsm_a(16)
+  series("GSE900016", gsm_a(16), titles_a, list(GSE900016_protein_coding.txt.gz = author_tsv(m, P("a16.txt.gz"))),
+         R = R_a, chars = list(treatment = cond_a))
 
   # esearch: count query and paged query
   writeLines(sprintf("<eSearchResult><Count>%d</Count><RetMax>0</RetMax><IdList></IdList>%s</eSearchResult>", length(esearch_ids), "<TranslationStack><TermSet><Term>\"rnaseq counts\"[Filter]</Term><Count>27715</Count></TermSet><TermSet><Term>gse[ETYP]</Term><Count>296352</Count></TermSet><OP>AND</OP></TranslationStack>"), P("es_count.xml"))
@@ -174,7 +190,7 @@ build_mock <- function(dir, raw_rds = "validation/raw_matrices.rds",
   # NCBI Gene's table, for the annotation fallback
   gi <- data.frame("#tax_id" = 9606, GeneID = annot$GeneID, Symbol = annot$Symbol, LocusTag = "-",
                    Synonyms = "-", dbXrefs = ifelse(is.na(annot$Ensembl), "-", paste0("MIM:1|HGNC:HGNC:1|Ensembl:", annot$Ensembl)),
-                   check.names = FALSE)
+                   type_of_gene = gene_type, check.names = FALSE)
   tsvgz(gi, P("gene_info.gz"))
   map[["https://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz"]] <- P("gene_info.gz")
   # what NCBI sometimes sends instead of a file: a bot-check page

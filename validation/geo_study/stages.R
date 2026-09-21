@@ -175,9 +175,11 @@ process_series <- function(gse) {
           row$truth_level_range <- sprintf("%.3g-%.3g", tv$level_min, tv$level_max)
           row$depth_slope <- tv$depth_slope; row$depth_slope_se <- tv$depth_slope_se
           row$depth_spread <- tv$depth_spread; row$truth_why <- tv$why
+          pc <- if (!is.null(annot$Type) && any(!is.na(annot$Type))) annot$GeneID[annot$Type %in% "protein-coding"] else NULL
           tc <- truth_completeness(unique(mp$gene_id[!is.na(mp$gene_id)]), R[, mc$gsm[ok], drop = FALSE],
-                                   representable(annot, mp$system))
+                                   representable(annot, mp$system), protein_coding = pc)
           row$truth_completeness <- tc$label; row$zero_present_frac <- tc$present_frac
+          row$completeness_restricted <- tc$restricted
         }
       }
     }

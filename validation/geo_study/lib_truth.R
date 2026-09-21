@@ -66,14 +66,31 @@ truth_value_scale <- function(A, Ag, R) {
 # what share appear in the author's file at all? Pipelines differ, so some of
 # NCBI's zeros are counted by the authors; the thresholds are set wide
 # (filtered < 0.3, complete > 0.6) and the continuous share is kept.
-truth_completeness <- function(author_gene_ids, R, can_name) {
+#
+# Restricted to protein-coding genes when a gene-type column is available
+# (protein_coding, the GeneIDs NCBI Gene calls "protein-coding"). Needed
+# because most of NCBI's all-zero genes are ncRNA, pseudogenes and the like
+# (~80% on a real series checked) - genes a protein-coding-only reference
+# (a common, legitimate choice, not a filter) never had rows for in the first
+# place. Unrestricted, that alone drags present_frac to ~0.2 for a completely
+# unfiltered protein-coding file (confirmed on GSE218546: present_frac 0.204
+# unrestricted; the zero-gene set there was itself 20.3% protein-coding - the
+# same number twice is not a coincidence). Restricting to protein-coding genes
+# is the one comparison that means the same thing whatever reference the
+# author's pipeline used.
+truth_completeness <- function(author_gene_ids, R, can_name, protein_coding = NULL) {
   zero <- rownames(R)[rowSums(R) == 0]
   zero <- intersect(zero, can_name)
+  restricted <- !is.null(protein_coding)
+  if (restricted) zero <- intersect(zero, protein_coding)
   if (length(zero) < 100)
-    return(list(label = "undetermined", present_frac = NA_real_, n_zero = length(zero)))
+    return(list(label = "undetermined", present_frac = NA_real_, n_zero = length(zero),
+               restricted = restricted,
+               why = if (restricted) "fewer than 100 protein-coding genes NCBI shows as zero in every matched sample"
+                     else "fewer than 100 nameable genes NCBI shows as zero in every matched sample"))
   f <- mean(zero %in% author_gene_ids)
   list(label = if (f < 0.3) "filtered" else if (f > 0.6) "complete" else "ambiguous",
-       present_frac = f, n_zero = length(zero))
+       present_frac = f, n_zero = length(zero), restricted = restricted)
 }
 
 # --- sex -------------------------------------------------------------------------
