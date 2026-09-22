@@ -71,6 +71,25 @@ at_id_names <- function()
   c("geneid", "gene_id", "gene", "genes", "id", "ids", "name", "target_id",
     "transcript_id", "ensembl_gene_id", "feature", "featureid", "x", "")
 
+# A spreadsheet tool's "Save as Unicode Text" (common on Windows, seen on real
+# GEO supplementary files - GSE197514, GSE241118) writes UTF-16 with a
+# byte-order-mark: FF FE (little-endian) or FE FF (big-endian). Reading that
+# as the platform's usual 8-bit encoding leaves a NUL byte after every ASCII
+# character, and the first string function that validates its input (grepl(),
+# used two lines below) fails with "invalid multibyte string" - a crash, not
+# a report, and one attest_file()'s own tryCatch only just kept from taking
+# the whole series down with it (unlike match_columns()/truth_value_scale(),
+# it is at least caught per-file). Detected from the raw bytes, before any
+# text encoding is assumed.
+at_detect_bom <- function(path) {
+  con <- if (grepl("\\.gz$", path)) gzfile(path, "rb") else file(path, "rb")
+  raw <- tryCatch(readBin(con, "raw", 2), error = function(e) raw(0))
+  close(con)
+  if (length(raw) == 2 && raw[1] == as.raw(0xFF) && raw[2] == as.raw(0xFE)) return("UTF-16LE")
+  if (length(raw) == 2 && raw[1] == as.raw(0xFE) && raw[2] == as.raw(0xFF)) return("UTF-16BE")
+  NULL
+}
+
 at_read_counts <- function(path, sep = NULL) {
   fail <- function(msg, ev = list())
     list(counts = NULL,
@@ -80,7 +99,9 @@ at_read_counts <- function(path, sep = NULL) {
     return(fail(sprintf("No file at %s.", paste(path, collapse = ", ")),
                 list(path = path)))
 
-  con <- if (grepl("\\.gz$", path)) gzfile(path, "rt") else file(path, "rt")
+  enc <- at_detect_bom(path)
+  con <- if (grepl("\\.gz$", path)) gzfile(path, "rt", encoding = if (is.null(enc)) "native.enc" else enc)
+         else file(path, "rt", encoding = if (is.null(enc)) "native.enc" else enc)
   head_lines <- tryCatch(readLines(con, n = 30, warn = FALSE), error = function(e) NULL)
   close(con)
   if (is.null(head_lines) || !length(head_lines))
@@ -142,7 +163,8 @@ at_read_counts <- function(path, sep = NULL) {
   df <- tryCatch(
     utils::read.table(path, sep = sep, header = TRUE, skip = skip,
                       check.names = FALSE, quote = "\"", comment.char = "",
-                      stringsAsFactors = FALSE),
+                      stringsAsFactors = FALSE,
+                      fileEncoding = if (is.null(enc)) "" else enc),
     error = function(e) NULL)
   if (is.null(df) || !ncol(df))
     return(fail(sprintf("The file could not be parsed as a '%s'-separated table.",
@@ -150,10 +172,14 @@ at_read_counts <- function(path, sep = NULL) {
 
   ev <- list(path = path, sep = sep, n_comment_lines = n_comment, n_banner_rows = n_banner,
              columns_read = ncol(df), rows_read = nrow(df),
-             featurecounts = grepl("^# Program:featureCounts", head_lines[1]))
+             featurecounts = grepl("^# Program:featureCounts", head_lines[1]),
+             bom_encoding = enc)
   lines <- character(0)
   na <- character(0)
   verdict <- "PERMITTED"
+  if (!is.null(enc))
+    lines <- c(lines, sprintf("the file is %s text (a byte-order mark was found) - read as %s, not the platform default",
+                              enc, enc))
   if (n_banner > 0)
     lines <- c(lines, sprintf("%d row%s above the header %s skipped (blank or a title, not part of the table)",
                               n_banner, if (n_banner > 1) "s" else "", if (n_banner > 1) "were" else "was"))

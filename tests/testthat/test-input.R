@@ -207,3 +207,34 @@ test_that("a title and merged-header rows above the real header are skipped (GEO
   utils::write.table(cbind(gene = rownames(m), as.data.frame(m)), f2, sep = "\t", quote = FALSE, row.names = FALSE)
   expect_equal(at_read_counts(f2)$check$measurements$n_banner_rows, 0L)
 })
+
+test_that("a UTF-16 file with a byte-order mark is read, not crashed on (GEO GSE197514/GSE241118 shape)", {
+  # "Save as Unicode Text" writes a NUL byte after every ASCII character; under
+  # a multibyte (UTF-8) locale the first string function to validate that -
+  # grepl(), used while looking for '#' comment lines - fails with "invalid
+  # multibyte string", not a report. Only reproduces under a multibyte locale
+  # (this container's default C locale does not validate encoding), so this
+  # test is skipped, not silently vacuous, where it cannot exercise the bug.
+  skip_if_not(l10n_info()[["UTF-8"]] || l10n_info()[["MBCS"]],
+             "needs a multibyte locale to exercise the crash this guards against")
+  m <- at_fixture()$airway[1:200, ]
+  body <- c(paste(c("Geneid", colnames(m)), collapse = "\t"),
+           apply(cbind(rownames(m), m), 1, paste, collapse = "\t"))
+  raw <- iconv(paste(body, collapse = "\n"), from = "UTF-8", to = "UTF-16LE", toRaw = TRUE)[[1]]
+  f <- tempfile(fileext = ".txt.gz")
+  con <- gzfile(f, "wb")
+  writeBin(as.raw(c(0xFF, 0xFE)), con)
+  writeBin(raw, con)
+  close(con)
+
+  rd <- at_read_counts(f)
+  expect_equal(rd$check$measurements$bom_encoding, "UTF-16LE")
+  expect_equal(dim(rd$counts), dim(m))
+  expect_equal(colnames(rd$counts), colnames(m))
+  expect_true(any(grepl("UTF-16LE", rd$check$evidence)))
+
+  # an ordinary UTF-8 file is unaffected (no byte-order mark found)
+  f2 <- tempfile(fileext = ".tsv")
+  utils::write.table(cbind(Geneid = rownames(m), as.data.frame(m)), f2, sep = "\t", quote = FALSE, row.names = FALSE)
+  expect_null(at_read_counts(f2)$check$measurements$bom_encoding)
+})
