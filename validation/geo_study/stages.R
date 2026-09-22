@@ -176,7 +176,17 @@ process_series <- function(gse) {
           row$depth_slope <- tv$depth_slope; row$depth_slope_se <- tv$depth_slope_se
           row$depth_spread <- tv$depth_spread; row$truth_why <- tv$why
           pc <- if (!is.null(annot$Type) && any(!is.na(annot$Type))) annot$GeneID[annot$Type %in% "protein-coding"] else NULL
-          az <- rownames(Ag)[rowSums(Ag[, ok, drop = FALSE]) == 0]     # which of the author's OWN genes read zero
+          # agreement_frac's zero-detector (rowSums(Ag) == 0) needs an exact zero floor.
+          # Only raw/estimated counts reliably have one: log-transformed data almost never
+          # lands on the exact floor (GSE198609 read agreement_frac 0.000 - an artifact of
+          # the diagnostic, not real disagreement), and depth-removed (CPM/TPM) data is
+          # measurably rounding-distorted the same way (B1-b above: rounded CPM inflated
+          # all-zero rows from 47.4% to 72.5% on airway). Only pass the author's own zero
+          # set through on a count-scale file; truth_completeness() already returns
+          # agreement_frac = NA when author_zero_gene_ids is NULL, so this is the only
+          # change needed - present_frac/label (structural, not value-based) are unaffected.
+          count_scale <- isTRUE(tv$label %in% c("raw counts", "estimated counts", "count scale, not whole numbers"))
+          az <- if (count_scale) rownames(Ag)[rowSums(Ag[, ok, drop = FALSE]) == 0] else NULL
           tc <- truth_completeness(unique(mp$gene_id[!is.na(mp$gene_id)]), R[, mc$gsm[ok], drop = FALSE],
                                    representable(annot, mp$system), protein_coding = pc,
                                    author_zero_gene_ids = az)
