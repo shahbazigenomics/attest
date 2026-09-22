@@ -91,19 +91,42 @@ truth_value_scale <- function(A, Ag, R) {
 # same number twice is not a coincidence). Restricting to protein-coding genes
 # is the one comparison that means the same thing whatever reference the
 # author's pipeline used.
-truth_completeness <- function(author_gene_ids, R, can_name, protein_coding = NULL) {
+#
+# present_frac still conflates two different things when it comes back low,
+# found by hand-checking the 200-series run's completeness misses: a gene
+# absent from the author's file because it was genuinely filtered out after
+# being measured, and a gene absent because the author's own reference never
+# included it at all (an older or smaller gene catalogue than NCBI's current
+# one - not a filter, a different, equally legitimate choice of what to quantify
+# against). Both look identical as "not present" and present_frac cannot tell
+# them apart. On 6 real completeness misses checked by hand (GSE155336 x2,
+# GSE198609, GSE233826 x3), 75-100% of the "missing" genes were of the second
+# kind - never a row in the author's file at all, zero or nonzero - and the
+# genuinely diagnostic signal (present as a row, but nonzero when NCBI says
+# zero) was a small residual in most of them. agreement_frac isolates that
+# residual: among the zero-gene set that the author's OWN reference is at
+# least capable of representing (present_ids, an already-mapped GeneID),
+# what fraction really do read zero there too? optional - author_zero_gene_ids
+# is NULL unless the caller has the author's own matrix (Ag) to check values
+# in, not just which GeneIDs it maps to.
+truth_completeness <- function(author_gene_ids, R, can_name, protein_coding = NULL,
+                               author_zero_gene_ids = NULL) {
   zero <- rownames(R)[rowSums(R) == 0]
   zero <- intersect(zero, can_name)
   restricted <- !is.null(protein_coding)
   if (restricted) zero <- intersect(zero, protein_coding)
   if (length(zero) < 100)
     return(list(label = "undetermined", present_frac = NA_real_, n_zero = length(zero),
-               restricted = restricted,
+               restricted = restricted, agreement_frac = NA_real_, n_representable = NA_integer_,
                why = if (restricted) "fewer than 100 protein-coding genes NCBI shows as zero in every matched sample"
                      else "fewer than 100 nameable genes NCBI shows as zero in every matched sample"))
   f <- mean(zero %in% author_gene_ids)
+  representable <- intersect(zero, author_gene_ids)
+  agreement_frac <- if (!is.null(author_zero_gene_ids) && length(representable))
+    mean(representable %in% author_zero_gene_ids) else NA_real_
   list(label = if (f < 0.3) "filtered" else if (f > 0.6) "complete" else "ambiguous",
-       present_frac = f, n_zero = length(zero), restricted = restricted)
+       present_frac = f, n_zero = length(zero), restricted = restricted,
+       agreement_frac = agreement_frac, n_representable = length(representable))
 }
 
 # --- sex -------------------------------------------------------------------------

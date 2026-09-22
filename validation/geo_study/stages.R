@@ -176,15 +176,24 @@ process_series <- function(gse) {
           row$depth_slope <- tv$depth_slope; row$depth_slope_se <- tv$depth_slope_se
           row$depth_spread <- tv$depth_spread; row$truth_why <- tv$why
           pc <- if (!is.null(annot$Type) && any(!is.na(annot$Type))) annot$GeneID[annot$Type %in% "protein-coding"] else NULL
+          az <- rownames(Ag)[rowSums(Ag[, ok, drop = FALSE]) == 0]     # which of the author's OWN genes read zero
           tc <- truth_completeness(unique(mp$gene_id[!is.na(mp$gene_id)]), R[, mc$gsm[ok], drop = FALSE],
-                                   representable(annot, mp$system), protein_coding = pc)
+                                   representable(annot, mp$system), protein_coding = pc,
+                                   author_zero_gene_ids = az)
           row$truth_completeness <- tc$label; row$zero_present_frac <- tc$present_frac
           row$completeness_restricted <- tc$restricted
+          row$completeness_agreement_frac <- tc$agreement_frac
+          row$completeness_n_representable <- tc$n_representable
         }
       }
     }
     flagged <- isTRUE(row$v_value %in% c("NOT PERMITTED", "CAUTION")) ||
-               isTRUE(row$truth_value == "depth removed") || isTRUE(row$summary_rows > 0)
+               isTRUE(row$truth_value == "depth removed") || isTRUE(row$summary_rows > 0) ||
+               isTRUE(row$truth_completeness == "filtered")   # symmetric with truth_value == "depth removed" above -
+                                                                # a completeness disagreement is just as worth keeping
+                                                                # for inspection as a value-scale one (found only by
+                                                                # hand-checking 9 cases whose files had already been
+                                                                # deleted by the time anyone looked twice)
     row$kept <- flagged || study$keep_author_files
     if (!row$kept) { unlink(path); if (tx$converted) unlink(tx$path) }
     rows[[i]] <- row
