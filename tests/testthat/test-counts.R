@@ -163,6 +163,38 @@ test_that("identity infers sex, catches mislabels and duplicate libraries", {
   expect_equal(attest(m, metadata = md_wrong)$verdict, "NOT PERMITTED")
 })
 
+test_that("a matrix with Inf is a typed failure, not a crash (found on GSE140150)", {
+  # a real published "counts" file that was actually a DE-results table: a
+  # fold-change column reads Inf wherever the denominator group is all-zero.
+  # Before the fix, Inf (not caught by the anyNA() guard) propagated into
+  # col_sum_spread as NaN and crashed the first unguarded `if` that tested it.
+  f <- system.file("extdata", "fixtures.rds", package = "attest")
+  if (!nzchar(f)) f <- "inst/extdata/fixtures.rds"
+  if (!file.exists(f)) f <- "../../inst/extdata/fixtures.rds"
+  m <- readRDS(f)$airway
+  m[1, 1] <- Inf
+  res <- expect_no_error(attest_counts(m))
+  expect_equal(res$verdict, "UNKNOWN")
+  expect_match(res$headline, "infinite", ignore.case = TRUE)
+  expect_equal(res$measurements$n_infinite, 1L)
+})
+
+test_that("sex calling degrades to 'not determined' rather than crashing on non-count input", {
+  # log2FPKM (or any matrix with values that make xist/yexp negative) can
+  # make the log-ratio NaN; ifelse()'s NA condition used to leave an NA
+  # entry in $call, which crashed every caller that compared it to a string
+  # (found on GSE113585, a log2FPKM file, and GSE50535).
+  f <- system.file("extdata", "fixtures.rds", package = "attest")
+  if (!nzchar(f)) f <- "inst/extdata/fixtures.rds"
+  if (!file.exists(f)) f <- "../../inst/extdata/fixtures.rds"
+  m <- readRDS(f)$airway
+  neg <- log2(m / (colMeans(m) + 1) + 1e-6)   # can be negative and give NaN log-ratios
+  res <- suppressWarnings(expect_no_error(at_sex_from_expression(neg)))
+  expect_false(anyNA(res$call))
+  expect_true(all(res$call %in% c("female", "male", "not determined")))
+  suppressWarnings(expect_no_error(attest_identity(neg)))
+})
+
 test_that("normalised matrices are caught at any depth, and flat totals are flagged", {
   f <- system.file("extdata", "fixtures.rds", package = "attest")
   if (!nzchar(f)) f <- "inst/extdata/fixtures.rds"

@@ -145,8 +145,15 @@ at_sex_from_expression <- function(m, margin = 2) {
   xist <- colSums(cpm[ix, , drop = FALSE])
   yexp <- apply(cpm[iy, , drop = FALSE], 2, stats::median)
   lr   <- log2((xist + 0.5) / (yexp + 0.5))            # >0 female-like, <0 male-like
-  call <- ifelse(lr >  margin, "female",
-          ifelse(lr < -margin, "male", "not determined"))
+  # lr can be NaN on input this check was never meant to see (negative or
+  # log-transformed values give a negative xist/yexp+0.5, so the log2 is of a
+  # negative number) - each check runs independently of value-scale, so this
+  # must degrade to "not determined" rather than let ifelse()'s NA condition
+  # produce an NA call, which crashed every caller that tested it against a
+  # string (found on a log2FPKM file, GSE113585).
+  ok   <- is.finite(lr)
+  call <- ifelse(ok & lr >  margin, "female",
+          ifelse(ok & lr < -margin, "male", "not determined"))
   list(call = call, n_found = n_found, xist = xist, y = yexp, log_ratio = lr)
 }
 

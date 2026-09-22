@@ -42,6 +42,16 @@ attest_counts <- function(x, tol_1e6 = 0.01, sf_spread_max = 1.01, aliasing_max 
     return(at_result("UNKNOWN", "The matrix contains missing values (NA).",
                      character(0), NULL, character(0), list(n_na = sum(is.na(m)))))
   }
+  if (any(is.infinite(m))) {
+    # a real count matrix cannot contain Inf/-Inf; seen on published
+    # "supplementary counts" files that are actually differential-expression
+    # results tables (a fold-change column is Inf wherever the denominator
+    # group is all-zero) - past this point every ratio built from column
+    # sums or size factors would otherwise be free to become NaN and crash
+    # the first unguarded `if` that tests it, rather than being reported.
+    return(at_result("UNKNOWN", "The matrix contains infinite values (Inf/-Inf), so it is not a count matrix.",
+                     character(0), NULL, character(0), list(n_infinite = sum(is.infinite(m)))))
+  }
 
   ev <- list()
   ev$dim                <- dim(m)

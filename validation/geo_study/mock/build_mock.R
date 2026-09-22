@@ -178,6 +178,21 @@ build_mock <- function(dir, raw_rds = "validation/raw_matrices.rds",
   m <- airway[pc_idx, , drop = FALSE]; colnames(m) <- gsm_a(16)
   series("GSE900016", gsm_a(16), titles_a, list(GSE900016_protein_coding.txt.gz = author_tsv(m, P("a16.txt.gz"))),
          R = R_a, chars = list(treatment = cond_a))
+  # 17. (GSE172052/GSE163622 shape) real counts with NA cells scattered in -
+  #     seen on published files that are actually DE-results tables (padj is
+  #     NA wherever independent filtering or a zero count left no p-value),
+  #     and on genuine spreadsheet blanks. Column names match neither GSM nor
+  #     title, so this is matched by correlation - the branch that crashed on
+  #     19 real series ("missing value where TRUE/FALSE needed": NA in the
+  #     author's values reached rowMeans() unguarded, turning the row filter
+  #     `e` into a vector with NA in it, and `if (sum(e) >= 500)` cannot
+  #     evaluate a NA condition). The genes underneath are still real airway
+  #     counts, so correlation should still recover the true pairing once the
+  #     NA rows are set aside rather than crashing the match.
+  m <- airway; colnames(m) <- paste0("s", 1:8)
+  set.seed(17); m[sample(seq_len(nrow(m)), floor(0.3 * nrow(m))), 1] <- NA
+  series("GSE900017", gsm_a(17), titles_a, list(GSE900017_de_results.txt.gz = author_tsv(m, P("a17.txt.gz"))),
+         R = R_a, chars = list(treatment = cond_a))
 
   # esearch: count query and paged query
   writeLines(sprintf("<eSearchResult><Count>%d</Count><RetMax>0</RetMax><IdList></IdList>%s</eSearchResult>", length(esearch_ids), "<TranslationStack><TermSet><Term>\"rnaseq counts\"[Filter]</Term><Count>27715</Count></TermSet><TermSet><Term>gse[ETYP]</Term><Count>296352</Count></TermSet><OP>AND</OP></TranslationStack>"), P("es_count.xml"))

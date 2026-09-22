@@ -172,6 +172,18 @@ match_columns <- function(A_gene, R, meta) {
     g <- intersect(rownames(A_gene), rownames(R))
     if (length(g) >= 500 && ncol(A_gene) >= 2) {
       la <- log1p(pmax(A_gene[g, , drop = FALSE], 0)); lr <- log1p(R[g, , drop = FALSE])
+      # NCBI's own counts are never missing a cell; the author's file can be -
+      # a DE-results table mistaken for counts (log2FoldChange/pvalue/padj,
+      # NA wherever independent filtering or a zero count left no p-value) or
+      # a spreadsheet with genuine blanks. An NA cell would otherwise turn
+      # rowMeans(la) into NA below, and an NA inside a logical vector used in
+      # `if (sum(e) >= 500)` crashes with "missing value where TRUE/FALSE
+      # needed" (found on GSE172052, GSE163622 and 17 other real series in
+      # the 200-series run - not a rare edge case). Rows with any NA on
+      # either side are dropped before any of the matching arithmetic runs,
+      # so every downstream step keeps its existing NA-free guarantee.
+      ok <- rowSums(is.na(la)) == 0 & rowSums(is.na(lr)) == 0
+      la <- la[ok, , drop = FALSE]; lr <- lr[ok, , drop = FALSE]
       pick <- function(cc) { cc[!is.finite(cc)] <- -1
         best <- apply(cc, 1, function(v) names(v)[which.max(v)])
         gap  <- apply(cc, 1, function(v) { s <- sort(v, decreasing = TRUE); s[1] - s[2] })

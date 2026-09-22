@@ -36,7 +36,20 @@ truth_value_scale <- function(A, Ag, R) {
   g <- intersect(rownames(Ag), rownames(R))
   g <- g[rowSums(R[g, , drop = FALSE] >= 50) == ncol(R)]
   if (length(g) < 200) return(done("undetermined", why = "fewer than 200 genes counted >= 50 by NCBI in every matched sample"))
-  r <- apply(Ag[g, , drop = FALSE] / R[g, , drop = FALSE], 2, stats::median)
+  # Ag can have NA cells at these genes (the same DE-results-table shape and
+  # genuine spreadsheet blanks already handled in match_columns() - padj is NA
+  # wherever independent filtering or an all-zero group left no value).
+  # median()'s default na.rm=FALSE would otherwise turn r into NA for any
+  # sample with even one NA among these 200+ genes, and an NA inside
+  # `all(r > 0)` crashes the unguarded `if` below with "missing value where
+  # TRUE/FALSE needed" (found via the mock's case 17, built to mirror the
+  # NA-cell shape already fixed in match_columns()). na.rm=TRUE keeps the
+  # estimate from whichever of the 200+ genes are non-NA for that sample; the
+  # rare case where a sample has none left (all NA) is caught below and
+  # reported as undetermined rather than silently guessed at.
+  r <- apply(Ag[g, , drop = FALSE] / R[g, , drop = FALSE], 2,
+             function(x) stats::median(x, na.rm = TRUE))
+  if (anyNA(r)) return(done("undetermined", why = "the author's values are missing (NA) for every gene NCBI counted >= 50 in at least one matched sample"))
   depth <- colSums(R)
   sp <- max(depth) / max(min(depth), 1)
   ds <- dse <- NA_real_

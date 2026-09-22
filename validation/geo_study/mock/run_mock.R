@@ -49,6 +49,8 @@ ok(row("GSE900014")$match_how == "correlation" && row("GSE900014")$n_matched == 
 ok(row("GSE900015")$v_input == "NOT PERMITTED" && row("GSE900015")$truth_value == "raw counts", "15 spreadsheet totals row: attest NOT PERMITTED (input)")
 ok(isTRUE(row("GSE900016")$completeness_restricted) && row("GSE900016")$truth_completeness == "complete",
    "16 protein-coding-only reference, otherwise complete: truth complete once restricted to protein-coding genes")
+ok(res$GSE900017$status == "ok" && row("GSE900017")$match_how == "correlation" && row("GSE900017")$n_matched == 8,
+   "17 NA cells in the author's values (DE-results shape): no crash, correlation still recovers all 8 samples")
 
 # NCBI accepts the counts filter but ignores it (as on the first real run):
 # the frame falls back to all human expression-by-sequencing series
