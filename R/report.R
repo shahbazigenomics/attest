@@ -70,14 +70,14 @@ attest <- function(x, ...) {
     sprintf("%s taken from the %s", paste(taken, collapse = " and "), from$source) else NULL
 
   id_args <- args[names(args) %in% c("sex_col", "dup_floor")]
-  checks <- list("value scale" = attest_counts(x))
+  checks <- list("value scale" = at_safe("fault", attest_counts(x)))
   not_run <- character(0)
 
   # named rows are what the identifier check works on; numbered rows are a
   # missing input, not a fault, so they belong in "not run"
   mat <- at_as_matrix(x)
   if (!is.null(rownames(mat))) {
-    checks[["identifiers"]] <- attest_identifiers(x)
+    checks[["identifiers"]] <- at_safe("fault", attest_identifiers(x))
   } else {
     not_run <- c(not_run, paste(
       "identifiers (is every row a gene, named once, from one annotation?):",
@@ -85,16 +85,16 @@ attest <- function(x, ...) {
       else "the matrix has no row names - read the counts with attest_file(), or set rownames(x)"))
   }
 
-  checks[["completeness"]] <- do.call(attest_completeness,
-                                      c(list(x), args[names(args) %in% "n_expected"]))
-  checks[["identity"]] <- do.call(attest_identity,
-                                  c(list(x), list(metadata = metadata), id_args))
+  checks[["completeness"]] <- at_safe("fault", do.call(attest_completeness,
+                                      c(list(x), args[names(args) %in% "n_expected"])))
+  checks[["identity"]] <- at_safe("fault", do.call(attest_identity,
+                                  c(list(x), list(metadata = metadata), id_args)))
 
   # strandedness needs the files the counting step wrote; when they cannot
   # answer (a single featureCounts summary usually cannot), that is a missing
   # input, not a fault, so it goes to "not run"
   if (!is.null(args$strandedness)) {
-    sc <- attest_strandedness(args$strandedness, counts = x)
+    sc <- at_safe("fault", attest_strandedness(args$strandedness, counts = x))
     if (identical(sc$verdict, "UNKNOWN")) {
       not_run <- c(not_run, paste0("strandedness (were the reads counted on the right strand?): ",
                                    sc$headline,
@@ -105,10 +105,10 @@ attest <- function(x, ...) {
   }
 
   if (!is.null(metadata) && !is.null(design)) {
-    checks[["design"]] <- do.call(
+    checks[["design"]] <- at_safe("fault", do.call(
       attest_design,
       c(list(x), list(metadata = metadata, design = design),
-        args[names(args) %in% "of_interest"]))
+        args[names(args) %in% "of_interest"])))
   } else {
     not_run <- c(not_run, sprintf(
       "design adequacy (is the effect estimable, and what is it worth after confounding?): %s",
@@ -119,11 +119,11 @@ attest <- function(x, ...) {
   }
 
   if (!is.null(group)) {
-    checks[["detectability"]] <- do.call(
+    checks[["detectability"]] <- at_safe("scope", do.call(
       attest_detectability,
       c(list(x), list(group = group, metadata = metadata, design = design,
                       of_interest = args$of_interest),
-        args[names(args) %in% c("power", "alpha", "target_fc", "dispersion")]))
+        args[names(args) %in% c("power", "alpha", "target_fc", "dispersion")])))
   } else {
     not_run <- c(not_run, paste(
       "detectability (for which genes could a change have been seen at all?):",
@@ -141,6 +141,26 @@ attest <- function(x, ...) {
 }
 
 at_kind <- function(ch) if (is.null(ch$kind)) "fault" else ch$kind
+
+# Defense in depth for D9 ("nothing raises"): every check already turns the
+# bad input it recognises into a typed UNKNOWN rather than stopping, but that
+# is a promise about each check's own guards, not a guarantee that every
+# guard anticipated every input. This catches whatever a check's own guards
+# did not - a future check, or a combination nobody constructed a guard for -
+# and converts it to the same typed shape, so one check's bug degrades that
+# one line of the report instead of taking the whole attest() call down with
+# it. kind matches what the check would normally report ("fault" for value
+# scale/identifiers/completeness/identity/design, "scope" for detectability),
+# so a caught error still sorts into the right half of the printed report and
+# does not silently drop out of the overall verdict.
+at_safe <- function(kind, expr) {
+  tryCatch(expr, error = function(e) at_result(
+    "UNKNOWN",
+    "This check could not be completed: it raised an unexpected error instead of returning a result.",
+    character(0),
+    sprintf("internal error (please report this): %s", conditionMessage(e)),
+    character(0), list(), kind = kind))
+}
 
 # severity order: the report is as strong as its weakest check
 at_worst <- function(v) {

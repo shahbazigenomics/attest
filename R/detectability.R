@@ -83,6 +83,29 @@ attest_detectability <- function(x, group = NULL, metadata = NULL, power = 0.8,
     return(at_result("UNKNOWN", "The input could not be read as a numeric matrix.",
                      character(0), NULL, character(0), list(input_class = class(x)[1]), kind = "scope"))
   }
+  if (anyNA(m)) {
+    return(at_result("UNKNOWN", "The matrix contains missing values (NA).",
+                     character(0), NULL, character(0), list(n_na = sum(is.na(m))), kind = "scope"))
+  }
+  if (any(is.infinite(m))) {
+    return(at_result("UNKNOWN", "The matrix contains infinite values (Inf/-Inf), so it is not a count matrix.",
+                     character(0), NULL, character(0), list(n_infinite = sum(is.infinite(m))), kind = "scope"))
+  }
+  zero_sample <- colSums(m) == 0
+  if (any(zero_sample)) {
+    # a size factor cannot be computed for a sample with zero total counts;
+    # left unguarded, the fallback sf <- colSums(m)/mean(colSums(m)) makes
+    # that sample's size factor 0, dividing it by 0 turns its whole column to
+    # NaN, and rowMeans() then makes mu NaN for every gene - so
+    # `if (!any(assessable))` is evaluated on all-NA and raises "missing
+    # value where TRUE/FALSE needed" instead of reporting anything.
+    return(at_result("UNKNOWN",
+                     sprintf("%d sample(s) have zero total counts (%s), so a size factor - and a detectable fold change - cannot be computed for %s.",
+                             sum(zero_sample),
+                             paste(utils::head(if (is.null(colnames(m))) which(zero_sample) else colnames(m)[zero_sample], 6), collapse = ", "),
+                             if (sum(zero_sample) == 1) "it" else "them"),
+                     character(0), NULL, character(0), list(zero_sum_samples = which(zero_sample)), kind = "scope"))
+  }
   g <- at_resolve_group(group, metadata, m)
   if (is.null(g)) {
     return(at_result("UNKNOWN",
@@ -125,13 +148,16 @@ attest_detectability <- function(x, group = NULL, metadata = NULL, power = 0.8,
   usable_mm <- !is.null(mm) && nrow(mm) == ncol(m) && qr(mm)$rank == ncol(mm) && nrow(mm) - ncol(mm) >= 2
   phi <- NULL
   phi_source <- NULL
-  if (dispersion %in% c("auto", "deseq2") && all(m == round(m)) &&
-      requireNamespace("DESeq2", quietly = TRUE)) {
+  deseq2_installed <- requireNamespace("DESeq2", quietly = TRUE)
+  deseq2_fit_failed <- FALSE
+  if (dispersion %in% c("auto", "deseq2") && all(m == round(m)) && deseq2_installed) {
     phi <- at_dispersion_deseq2(m, if (usable_mm) design else NULL,
                                 if (usable_mm) metadata else NULL, g)
     if (!is.null(phi))
       phi_source <- sprintf("DESeq2's own dispersion estimates for %s",
                             if (usable_mm) paste(deparse(design), collapse = "") else "~ group")
+    else
+      deseq2_fit_failed <- TRUE
   }
   if (is.null(phi)) {
     phi <- if (usable_mm) at_dispersion_design(norm, mm) else at_dispersion_moments(norm, g)
@@ -226,8 +252,11 @@ attest_detectability <- function(x, group = NULL, metadata = NULL, power = 0.8,
     if (deseq2_used)
       "calibrated against DESeq2 itself on paired and unpaired designs built from airway and Kang 2018 (validation/detectability_calibration_deseq2.R): a claimed 80% gave 80-85% (single simulated experiments 78-86%) across 3-8 replicates. edgeR and limma-voom have not been calibrated"
     else
-      paste(if (dispersion == "moments") "The moment estimate was chosen" else "DESeq2 is not installed",
-            "so the noise is attest's own estimate of the true dispersion. DESeq2 estimates it higher on small designs and detected 65-78% of changes at these sizes, not 80% (validation/detectability_calibration_deseq2.R); with DESeq2 installed the figures hold"),
+      paste(if (dispersion == "moments") "The moment estimate was chosen"
+            else if (!deseq2_installed) "DESeq2 is not installed"
+            else if (deseq2_fit_failed) "DESeq2 is installed, but its dispersion fit failed on this data (too few residual degrees of freedom, or a fit that did not converge) and attest fell back to its own estimate"
+            else "DESeq2's dispersion estimates were not used",
+            "so the noise is attest's own estimate of the true dispersion. DESeq2 estimates it higher on small designs and detected 65-78% of changes at these sizes, not 80% (validation/detectability_calibration_deseq2.R); with DESeq2 installed and fitting successfully the figures hold"),
     ev, kind = "scope")
 }
 

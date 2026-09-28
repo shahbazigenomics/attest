@@ -52,6 +52,13 @@ attest_counts <- function(x, tol_1e6 = 0.01, sf_spread_max = 1.01, aliasing_max 
     return(at_result("UNKNOWN", "The matrix contains infinite values (Inf/-Inf), so it is not a count matrix.",
                      character(0), NULL, character(0), list(n_infinite = sum(is.infinite(m)))))
   }
+  if (all(m == 0)) {
+    # without this, col_sum_spread computes as 0 / max(0, 1) = 0, which later
+    # reads as "every sample totals the same to within -100.00%" - a real
+    # message, seen on a filtered-to-nothing matrix, that nobody could parse.
+    return(at_result("UNKNOWN", "Every value in this matrix is zero, so there is nothing here to judge as raw counts or not.",
+                     character(0), NULL, character(0), list(dim = dim(m))))
+  }
 
   ev <- list()
   ev$dim                <- dim(m)
@@ -265,6 +272,53 @@ at_as_matrix <- function(x) {
                   error = function(e) NULL)
   }
   if (is.null(m) || !is.numeric(m)) NULL else m
+}
+
+# Confirms a sample sheet's rows line up with the matrix's columns instead of
+# assuming they already do. Every caller that combines a matrix with a
+# metadata data.frame (attest_identity(), attest_design(), ...) checked only
+# that the ROW COUNT matched (nrow(metadata) == ncol(m)); a sample sheet sorted
+# differently from the matrix - alphabetically by accession vs. grouped by
+# condition, say, a common mismatch when the two are prepared separately -
+# passed that check and was then paired up positionally with the wrong
+# sample, silently. When both sides carry names, this enforces alignment by
+# name instead: matching order is left alone, a matching set in different
+# order is reordered (and reported), and a set that does not match at all is
+# surfaced as a mismatch for the caller to refuse rather than guess at. When
+# either side has no names to check against, alignment is not asserted - that
+# gap is reported via not_assessed so it reads as an open question, not a
+# clean bill of health.
+at_align_metadata <- function(m, metadata) {
+  out <- list(metadata = metadata, note = NULL, not_assessed = NULL, mismatch = NULL)
+  if (is.null(metadata) || !nrow(metadata)) return(out)
+  cn <- colnames(m)
+  rn <- rownames(metadata)
+  has_cn <- !is.null(cn) && !anyDuplicated(cn)
+  # a data.frame nobody assigned row names to gets default integer ones -
+  # "1", "2", ... - and critically these are NOT reset by subsetting: m[k, ]
+  # keeps the original row's own number (subsetting to rows 1,2,5,6 keeps
+  # "1","2","5","6", not "1","2","3","4"), so testing against
+  # seq_len(nrow(metadata)) alone still passed a subsetted, still-unnamed
+  # data.frame off as "really" named. All-digit row names are never real
+  # sample identifiers in practice (nobody names a sample "5"), so they are
+  # treated as absent regardless of which digits they happen to be.
+  has_rn <- !is.null(rn) && !all(grepl("^[0-9]+$", rn)) && !anyDuplicated(rn)
+  if (!has_cn || !has_rn) {
+    out$not_assessed <- paste(
+      "sample sheet alignment: the matrix has no column names, the sample sheet has no row names, or one has",
+      "duplicates, so sample sheet rows are assumed to already be in the same order as the matrix's columns -",
+      "this was not verified by name")
+    return(out)
+  }
+  if (setequal(cn, rn)) {
+    if (!identical(cn, rn)) {
+      out$metadata <- metadata[cn, , drop = FALSE]
+      out$note <- "the sample sheet's rows were reordered to match the matrix's columns by name (their original order did not)"
+    }
+    return(out)
+  }
+  out$mismatch <- list(extra_meta = setdiff(rn, cn), extra_mat = setdiff(cn, rn))
+  out
 }
 
 # `kind` says what sort of statement a check makes:

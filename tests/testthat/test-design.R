@@ -88,6 +88,39 @@ test_that("columns that line up for harmless reasons are left alone", {
   expect_equal(attest_design(m, aw, ~ cell + dex)$verdict, "PERMITTED")
 })
 
+test_that("a variable's coefficient columns are not confused with another variable's", {
+  # grep("^var", colnames(mm)) matched any OTHER term whose name happened to
+  # start with var's name too (~ cell + celltype attributed celltype's
+  # coefficients, and its VIF, to cell as well)
+  md <- data.frame(cell = factor(rep(c("A", "B", "C", "D"), each = 2)),
+                   celltype = factor(rep(c("x", "y"), 4)))
+  mm <- stats::model.matrix(~ cell + celltype, md)
+
+  cell_cols <- at_coefficient_columns(mm, "cell", md)
+  expect_equal(sort(colnames(mm)[cell_cols]), c("cellB", "cellC", "cellD"))
+  expect_false(any(grepl("^celltype", colnames(mm)[cell_cols])))
+
+  celltype_cols <- at_coefficient_columns(mm, "celltype", md)
+  expect_equal(colnames(mm)[celltype_cols], "celltypey")
+
+  # a continuous variable's own column, not confused with a longer name either
+  md2 <- data.frame(rin = c(6.1, 6.5, 6.8, 7.0, 8.2, 8.5, 9.0, 9.3), rinbatch = factor(rep(1:2, 4)))
+  mm2 <- stats::model.matrix(~ rin + rinbatch, md2)
+  rin_cols <- at_coefficient_columns(mm2, "rin", md2)
+  expect_equal(colnames(mm2)[rin_cols], "rin")
+})
+
+test_that("a design term with an NA silently dropping rows is caught, not miscounted", {
+  # model.matrix()'s default na.action is na.omit: an NA in a design term
+  # (batch here) drops that sample's row without erroring, so rank, group
+  # sizes and VIF were previously computed on fewer rows than n_samples claimed
+  m <- at_fixture_airway()
+  md <- data.frame(cond = cond8, batch = factor(c("A", "A", "B", "B", "A", "A", NA, "B")))
+  r <- attest_design(m, md, ~ batch + cond)
+  expect_equal(r$verdict, "UNKNOWN")
+  expect_match(r$headline, "dropped")
+})
+
 test_that("the chance the message quotes is the chance that happens", {
   # an unrelated covariate separates 4 + 4 samples 2 / choose(8, 4) of the time;
   # 2,000 draws puts the realised rate within ~0.008 of that with high probability

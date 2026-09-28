@@ -183,6 +183,69 @@ test_that("tab wins over a delimiter-like character inside an annotation column 
   expect_equal(nrow(rd$counts), nrow(m))
 })
 
+test_that("a banner row above a featureCounts header is found even with few samples and multi-exon genes", {
+  # Chr/Start/End/Strand are legitimately non-numeric for a multi-exon gene
+  # (joined with ';'), which used to dilute the "is the row below the header
+  # mostly numeric" fraction below its 0.5 threshold once only 2 sample
+  # columns diluted it further - the banner above the header was then missed
+  # entirely, and the title row was read as if it were the header.
+  set.seed(7)
+  m <- at_fixture()$airway[1:60, 1:2]
+  nexon <- sample(1:3, nrow(m), replace = TRUE)
+  joined <- function(x) vapply(nexon, function(k) paste(rep(x, k), collapse = ";"), "")
+  body <- data.frame(Geneid = rownames(m), Chr = joined("chr1"), Start = joined("100"),
+                     End = joined("200"), Strand = joined("+"), Length = 1000, m,
+                     check.names = FALSE)
+  f <- tempfile(fileext = ".tsv")
+  banner <- paste(c("My featureCounts run", rep("", ncol(body) - 1)), collapse = "\t")
+  writeLines(c(banner, paste(names(body), collapse = "\t")), f)
+  utils::write.table(body, f, sep = "\t", quote = FALSE, row.names = FALSE,
+                     col.names = FALSE, append = TRUE)
+  rd <- at_read_counts(f)
+  expect_equal(rd$check$measurements$n_banner_rows, 1L)
+  expect_equal(dim(rd$counts), dim(m))
+  expect_equal(colnames(rd$counts), colnames(m))
+})
+
+test_that("numbers written with thousands separators are read, not mistaken for the delimiter", {
+  # a comma inside "1,234,567" splits exactly like a real comma delimiter,
+  # and does so consistently when every sample has a similarly large count -
+  # this used to make the sniffer choose "," over the file's real tab
+  set.seed(8)
+  m <- at_fixture()$airway[1:30, 1:3]
+  fmt <- function(v) format(v, big.mark = ",", scientific = FALSE, trim = TRUE)
+  body <- data.frame(Geneid = rownames(m), fmt(m[, 1]), fmt(m[, 2]), fmt(m[, 3]),
+                     check.names = FALSE)
+  names(body) <- c("Geneid", colnames(m))
+  f <- tempfile(fileext = ".tsv")
+  utils::write.table(body, f, sep = "\t", quote = FALSE, row.names = FALSE)
+
+  rd <- at_read_counts(f)
+  expect_equal(rd$check$measurements$sep, "\t")
+  expect_equal(unname(rd$counts), unname(m))
+  expect_true("Geneid" %in% names(body))  # sanity: id column untouched by stripping
+  expect_true(length(rd$check$measurements$thousands_columns) > 0)
+  expect_true(any(grepl("thousands separators", rd$check$evidence)))
+
+  # a genuinely comma-separated file is unaffected
+  m2 <- at_fixture()$airway[1:30, 1:3]
+  f2 <- tempfile(fileext = ".csv")
+  utils::write.table(cbind(gene = rownames(m2), as.data.frame(m2)), f2, sep = ",", quote = FALSE, row.names = FALSE)
+  rd2 <- at_read_counts(f2)
+  expect_equal(rd2$check$measurements$sep, ",")
+  expect_equal(unname(rd2$counts), unname(m2))
+})
+
+test_that("attest_file() reading one file at a time does not crash on a length>1 path", {
+  # file.exists() is vectorised; testing it inside the original || chain on a
+  # length>1 path raised "'length = 2' in coercion to 'logical(1)'" instead of
+  # reporting anything - seen when a strandedness = c(counts, summary) pair
+  # was passed to attest_file() by mistake
+  r <- expect_no_error(attest_file(c("a.txt", "b.txt")))
+  expect_equal(r$verdict, "UNKNOWN")
+  expect_match(r$checks$input$headline, "one.*at a time|one.*file")
+})
+
 test_that("a title and merged-header rows above the real header are skipped (GEO GSE162669 shape)", {
   m <- at_fixture()$airway[1:400, ]
   f <- tempfile(fileext = ".tsv")

@@ -72,6 +72,36 @@ attest_identifiers <- function(x) {
     lines <- c(lines, "they were written by htseq-count or STAR at the end (or start) of the table and never removed")
   }
 
+  # --- rows that LOOK like an unrecognised summary row ----------------------
+  # at_summary_rows() only knows htseq-count and STAR's own names; a totals
+  # row from any other pipeline, or a summary row from a tool that names it
+  # differently, has no name in that list and would otherwise be scored as an
+  # ordinary gene with no signal at all. A totals/unassigned row is not a
+  # naming pattern so much as a *count* pattern: it sits at the very top or
+  # bottom of the table (where a pipeline appends or prepends it) and holds a
+  # share of the library many times larger than any real gene ever does.
+  # Neither signal alone is safe (the first or last gene in an arbitrarily
+  # sorted table is unremarkable; one gene legitimately dominates a library in
+  # some tissues), so both are required, and the result is a CAUTION, not an
+  # automatic removal - this package reports what it cannot rule out rather
+  # than silently deciding for the person running it.
+  susp <- at_suspect_summary_rows(id, m, summ)
+  ev$suspect_summary_rows <- id[susp]
+  if (any(susp)) {
+    share <- colSums(m[susp, , drop = FALSE]) / pmax(colSums(m), 1)
+    if (verdict == "PERMITTED") {
+      verdict  <- "CAUTION"
+      headline <- "A row at the edge of the table may be an unrecognised summary row, not a gene."
+    }
+    lines <- c(lines, sprintf(
+      "%s %s at the %s of the table and %s of each library on its own - many times any other single row; not a name this package recognises as a known pipeline's summary row, but worth checking it is really a gene",
+      paste(sprintf("'%s'", utils::head(id[susp], 3)), collapse = ", "),
+      if (sum(susp) == 1) "sits" else "sit",
+      paste(unique(ifelse(which(susp) <= nrow(m) / 2, "top", "bottom")), collapse = "/"),
+      if (diff(range(share)) < 0.005) sprintf("holds about %.1f%%", 100 * mean(share))
+      else sprintf("holds %.1f%% to %.1f%%", 100 * min(share), 100 * max(share))))
+  }
+
   # --- Excel ---------------------------------------------------------------
   mangled <- at_date_like(id)
   ev$excel_mangled <- id[mangled]
@@ -165,13 +195,47 @@ attest_identifiers <- function(x) {
             na, ev)
 }
 
-# htseq-count and STAR write their totals into the table itself
+# htseq-count, STAR and featureCounts write their totals into the table
+# itself. featureCounts' own "Unassigned_*" categories (from its .summary
+# file, sometimes pasted into the counts table by hand) were missing here
+# entirely - none of them start with "__" or "N_", so they read as ordinary
+# genes.
 at_summary_rows <- function(id) {
   id <- trimws(as.character(id))
   grepl("^__", id) |
     grepl("^N_(unmapped|multimapping|noFeature|ambiguous)$", id, ignore.case = TRUE) |
+    grepl("^Unassigned_(Ambiguity|Ambiguous|MultiMapping|NoFeatures|Unmapped|Secondary|Duplicate|MappingQuality|FragmentLength|Chimera|ReadType|Overlapping_Length)$",
+          id, ignore.case = TRUE) |
+    tolower(id) %in% c("total", "totals", "total_reads", "sum") |
     id %in% c("no_feature", "ambiguous", "too_low_aQual", "not_aligned",
               "alignment_not_unique", "not_aligned_total", "__no_feature")
+}
+
+# A row that is not on the known-name list above but still walks and talks
+# like one: at the very top or bottom of the table (where every pipeline that
+# appends totals puts them), and its share of the library is far outside what
+# any real gene reaches. The threshold (10x the 99th percentile of every
+# OTHER row's share, and at least 15% of the library on its own) is
+# deliberately conservative - a hit here is reported as a CAUTION to look at,
+# not treated as proven.
+at_suspect_summary_rows <- function(id, m, known) {
+  n <- nrow(m)
+  out <- rep(FALSE, n)
+  if (n < 20 || ncol(m) < 1) return(out)
+  edge <- rep(FALSE, n)
+  edge[seq_len(min(3L, n))] <- TRUE
+  edge[seq.int(max(1L, n - 2L), n)] <- TRUE
+  edge <- edge & !known
+  if (!any(edge)) return(out)
+  tot <- pmax(colSums(m), 1)
+  row_share <- sweep(m, 2, tot, "/")
+  own <- apply(row_share, 1, max)                     # each row's largest single-sample share
+  rest <- own[!known]
+  if (sum(!known) < 10) return(out)
+  ref <- stats::quantile(rest[!edge[!known]], 0.99, na.rm = TRUE, names = FALSE)
+  if (!is.finite(ref) || ref <= 0) return(out)
+  out[edge] <- own[edge] >= max(10 * ref, 0.15)
+  out
 }
 
 # Excel's damage. Deliberately NOT all-digit strings: Entrez gene IDs are digits.

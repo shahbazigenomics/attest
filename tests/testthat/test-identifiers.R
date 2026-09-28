@@ -88,6 +88,35 @@ test_that("duplicated and empty names are caught", {
   expect_equal(attest_identifiers(b)$measurements$n_blank, 1L)
 })
 
+test_that("featureCounts' own Unassigned_* summary rows are recognised", {
+  # previously absent from at_summary_rows() entirely - none of these start
+  # with "__" or "N_", so they read as ordinary genes and were never priced
+  m <- at_fixture()$airway
+  h <- rbind(m,
+             "Unassigned_Ambiguity"    = round(colSums(m) * 0.06),
+             "Unassigned_MultiMapping" = round(colSums(m) * 0.04))
+  r <- attest_identifiers(h)
+  expect_equal(r$verdict, "NOT PERMITTED")
+  expect_equal(length(r$measurements$summary_rows), 2L)
+})
+
+test_that("a totals row with no recognised name is flagged as CAUTION, not silently kept as a gene", {
+  m <- at_fixture()$airway
+  # a name no pipeline in at_summary_rows() knows, at the bottom of the table,
+  # holding far more than any real gene ever does
+  h <- rbind(m, "grand_total_reads" = round(colSums(m) * 1.3))
+  r <- attest_identifiers(h)
+  expect_equal(r$verdict, "CAUTION")
+  expect_equal(r$measurements$suspect_summary_rows, "grand_total_reads")
+  expect_true(any(grepl("bottom of the table", r$evidence)))
+
+  # a real gene near the edge that just happens to be highly expressed must
+  # not be flagged - only rows far beyond any real gene's share trigger this
+  ordinary <- attest_identifiers(m)
+  expect_equal(length(ordinary$measurements$suspect_summary_rows), 0L)
+  expect_equal(ordinary$verdict, "PERMITTED")
+})
+
 test_that("numbered rows are a missing input, not a fault", {
   m <- at_fixture()$airway
   nr <- m; rownames(nr) <- NULL

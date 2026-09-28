@@ -90,14 +90,33 @@ at_detect_bom <- function(path) {
   NULL
 }
 
+# Removes only genuine thousands grouping (1,234,567 -> 1234567; 12,345.6 ->
+# 12345.6), never a comma that is actually separating two different values:
+# the lookahead requires the run starting at each comma to be one or more
+# complete 3-digit groups ending at a non-digit/non-comma or end of string, so
+# "1234,999" at the end of a field (a genuinely separate 3-digit value) only
+# matches when it truly is one unbroken grouped number all the way to its end.
+at_strip_thousands <- function(lines) {
+  gsub("(?<=[0-9]),(?=[0-9]{3}(,[0-9]{3})*(\\.[0-9]+)?([^0-9,]|$))", "", lines, perl = TRUE)
+}
+
 at_read_counts <- function(path, sep = NULL) {
   fail <- function(msg, ev = list())
     list(counts = NULL,
          check  = at_result("UNKNOWN", msg, character(0), NULL, character(0), ev))
 
-  if (!length(path) || !is.character(path) || !file.exists(path))
-    return(fail(sprintf("No file at %s.", paste(path, collapse = ", ")),
-                list(path = path)))
+  if (!length(path) || !is.character(path))
+    return(fail(sprintf("No file at %s.", paste(path, collapse = ", ")), list(path = path)))
+  if (length(path) != 1L)
+    # file.exists() is vectorised; testing it inside this same || chain on a
+    # length>1 path raised "'length = 2' in coercion to 'logical(1)'" instead
+    # of reporting anything - seen when a strandedness = c(counts, summary)
+    # pair was passed to attest_file()/at_read_counts() by mistake.
+    return(fail(sprintf(
+      "attest_file() reads one counts file at a time; got %d paths (%s). If one of these is featureCounts' .summary file, pass it as strandedness = c(counts_path, summary_path) to attest_file(counts_path, ...) instead.",
+      length(path), paste(path, collapse = ", ")), list(path = path)))
+  if (!file.exists(path))
+    return(fail(sprintf("No file at %s.", path), list(path = path)))
 
   enc <- at_detect_bom(path)
   con <- if (grepl("\\.gz$", path)) gzfile(path, "rt", encoding = if (is.null(enc)) "native.enc" else enc)
@@ -112,12 +131,22 @@ at_read_counts <- function(path, sep = NULL) {
   if (!length(body)) return(fail("The file holds only comment lines.", list(path = path)))
 
   if (is.null(sep)) {
+    # a comma used to group a number's thousands (1,234,567) splits exactly
+    # like a field separator, and does so CONSISTENTLY whenever every sample
+    # happens to have a similarly large count - the field-count consistency
+    # test below cannot otherwise tell that apart from a real comma-separated
+    # file, and picked "," as the separator for a tab-separated file whose
+    # values were written with thousands separators. Sniff on a copy with
+    # that specific pattern removed; the real `body`, used for banner
+    # detection and the actual parse below, is untouched.
+    sniff_body <- at_strip_thousands(body)
+
     # the right separator gives the SAME field count line after line; a count
     # like ";" can win on raw occurrences while being useless as a delimiter,
     # e.g. featureCounts' Chr/Start/End columns join multiple exons with ";"
     # (hundreds per line) while tab stays at a constant field count
     consistency <- function(s) {
-      w <- vapply(utils::head(body, 8), function(l) length(strsplit(l, s, fixed = TRUE)[[1]]), integer(1))
+      w <- vapply(utils::head(sniff_body, 8), function(l) length(strsplit(l, s, fixed = TRUE)[[1]]), integer(1))
       m <- as.integer(names(sort(table(w), decreasing = TRUE))[1])
       c(fields = m, consistent = mean(w == m))
     }
@@ -127,7 +156,7 @@ at_read_counts <- function(path, sep = NULL) {
     if (any(good)) {
       sep <- cand[good][which.max(cs["fields", good])]
     } else {
-      per_line <- function(s) stats::median(vapply(utils::head(body, 5), function(l)
+      per_line <- function(s) stats::median(vapply(utils::head(sniff_body, 5), function(l)
         as.numeric(length(gregexpr(s, l, fixed = TRUE)[[1]][gregexpr(s, l, fixed = TRUE)[[1]] > 0])),
         numeric(1)))
       n <- vapply(cand, per_line, numeric(1))
@@ -148,13 +177,30 @@ at_read_counts <- function(path, sep = NULL) {
   # itself followed by a line that is also filled and mostly numeric.
   filled <- function(l) { f <- strsplit(l, sep, fixed = TRUE)[[1]]; if (!length(f)) return(0)
                           mean(nzchar(trimws(f))) }
-  numeric_frac <- function(l) { f <- strsplit(l, sep, fixed = TRUE)[[1]]; f <- trimws(f)
-                                f <- f[nzchar(f)]; if (!length(f)) return(0)
-                                mean(!is.na(suppressWarnings(as.numeric(f)))) }
+  # featureCounts' Chr/Start/End/Strand columns are legitimately non-numeric
+  # in a real data row - Chr and Strand are always text, and Start/End become
+  # semicolon-joined text for any multi-exon gene - so a real featureCounts
+  # row can fail a flat "mostly numeric" test outright with few samples (2
+  # annotation-derived text fields plus Chr/Strand out of, say, 8 total
+  # columns leaves under half numeric). `exclude` drops the field positions
+  # that the *header* candidate itself names as annotation or the identifier,
+  # so only the sample columns are judged for "mostly numeric".
+  ann_positions <- function(header_line) {
+    hf <- tolower(trimws(strsplit(header_line, sep, fixed = TRUE)[[1]]))
+    which(hf %in% at_annotation_names() | hf %in% at_id_names())
+  }
+  numeric_frac <- function(l, exclude = integer(0)) {
+    f <- strsplit(l, sep, fixed = TRUE)[[1]]
+    if (length(exclude)) f <- f[-exclude[exclude <= length(f)]]
+    f <- trimws(f); f <- f[nzchar(f)]
+    if (!length(f)) return(0)
+    mean(!is.na(suppressWarnings(as.numeric(f))))
+  }
   n_banner <- 0L
   window <- seq_len(min(15L, length(body) - 1L))
   for (i in window) {
-    if (filled(body[i]) >= 0.8 && filled(body[i + 1]) >= 0.8 && numeric_frac(body[i + 1]) >= 0.5) {
+    if (filled(body[i]) >= 0.8 && filled(body[i + 1]) >= 0.8 &&
+        numeric_frac(body[i + 1], ann_positions(body[i])) >= 0.5) {
       n_banner <- i - 1L; break
     }
   }
@@ -222,6 +268,30 @@ at_read_counts <- function(path, sep = NULL) {
       paste(sprintf("'%s'", names(df)[ann]), collapse = ", "),
       if (fc) " - the file is featureCounts output, whose Start, End and Length columns are numeric and are otherwise counted as three extra libraries" else ""))
     drop <- c(drop, ann)
+  }
+
+  # --- sample columns written with thousands separators --------------------
+  # read.table() reads "1,234,567" as the string "1,234,567", not a number -
+  # it would otherwise be dropped below as "not numeric", losing a real
+  # sample column outright rather than just misreading it. A candidate column
+  # is converted only when EVERY non-blank value in it matches a whole,
+  # optionally thousands-grouped number, so a genuinely non-numeric column
+  # (or one with even a single malformed entry) is left alone and still
+  # reported as dropped, not silently guessed at.
+  thousands_cols <- character(0)
+  for (j in setdiff(seq_len(ncol(df)), drop)) {
+    if (is.numeric(df[[j]])) next
+    v <- trimws(as.character(df[[j]]))
+    nz <- v[nzchar(v)]
+    if (length(nz) && all(grepl("^-?[0-9]{1,3}(,[0-9]{3})*(\\.[0-9]+)?$", nz))) {
+      df[[j]] <- suppressWarnings(as.numeric(ifelse(nzchar(v), gsub(",", "", v), NA_character_)))
+      thousands_cols <- c(thousands_cols, names(df)[j])
+    }
+  }
+  if (length(thousands_cols)) {
+    ev$thousands_columns <- thousands_cols
+    lines <- c(lines, sprintf("%s read as numbers written with thousands separators (e.g. 1,234,567); the commas were removed",
+                              paste(sprintf("'%s'", thousands_cols), collapse = ", ")))
   }
 
   keep <- setdiff(seq_len(ncol(df)), drop)

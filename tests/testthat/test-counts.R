@@ -163,6 +163,86 @@ test_that("identity infers sex, catches mislabels and duplicate libraries", {
   expect_equal(attest(m, metadata = md_wrong)$verdict, "NOT PERMITTED")
 })
 
+test_that("a sample sheet is aligned to the matrix by name, not assumed to match by position", {
+  f <- system.file("extdata", "fixtures.rds", package = "attest")
+  if (!nzchar(f)) f <- "inst/extdata/fixtures.rds"
+  if (!file.exists(f)) f <- "../../inst/extdata/fixtures.rds"
+  m <- readRDS(f)$airway
+  labels <- c(rep("male", 6), "female", "female")
+
+  # correctly aligned already: unaffected
+  md <- data.frame(sex = labels, row.names = colnames(m))
+  expect_equal(attest_identity(m, metadata = md)$verdict, "PERMITTED")
+
+  # right samples, sheet sorted differently: reordered by name and still correct
+  shuffled <- data.frame(sex = labels, row.names = colnames(m))[rev(colnames(m)), , drop = FALSE]
+  r <- attest_identity(m, metadata = shuffled)
+  expect_equal(r$verdict, "PERMITTED")
+  expect_true(any(grepl("reordered", r$evidence)))
+
+  # a sheet for different samples entirely: refused, not paired up positionally
+  wrong <- md; rownames(wrong) <- paste0("not_", rownames(md))
+  r2 <- attest_identity(m, metadata = wrong)
+  expect_equal(r2$verdict, "NOT PERMITTED")
+  expect_match(r2$headline, "do not match")
+
+  # the same guard applies to the design check
+  cond <- factor(rep(c("ctrl", "trt"), each = 4))
+  aligned <- data.frame(cond = cond, row.names = colnames(m))
+  expect_equal(attest_design(m, aligned, ~ cond)$verdict, "PERMITTED")
+  mismatched <- aligned; rownames(mismatched) <- paste0("not_", rownames(aligned))
+  expect_equal(attest_design(m, mismatched, ~ cond)$verdict, "NOT PERMITTED")
+
+  # no names on either side, or a data.frame subsetted from an unnamed one
+  # (which keeps the ORIGINAL row numbers, not 1..n): still assumed positional,
+  # exactly as before this check existed - this is not a regression
+  bare <- data.frame(sex = labels)
+  expect_equal(attest_identity(m, metadata = bare)$verdict, "PERMITTED")
+  k <- c(1, 2, 5, 6)
+  balanced <- data.frame(cond = factor(rep(c("ctrl", "trt"), each = 4)),
+                         batch = factor(rep(c("A", "B"), times = 4)))
+  expect_equal(attest_design(m[, k], balanced[k, ], ~ batch + cond)$verdict, "CAUTION")
+})
+
+test_that("attest() does not stop when a check raises an error it did not anticipate", {
+  # defense in depth for D9 ("nothing raises"): each check's own guards cover
+  # the input combinations someone thought to write a guard for; this covers
+  # whatever they did not, so one check's bug degrades that line of the
+  # report rather than taking attest() down entirely
+  f <- system.file("extdata", "fixtures.rds", package = "attest")
+  if (!nzchar(f)) f <- "inst/extdata/fixtures.rds"
+  if (!file.exists(f)) f <- "../../inst/extdata/fixtures.rds"
+  m <- readRDS(f)$airway
+
+  original <- attest_completeness
+  attest_completeness <<- function(...) stop("simulated unexpected bug")
+  on.exit(attest_completeness <<- original, add = TRUE)
+
+  r <- expect_no_error(attest(m))
+  expect_equal(r$verdict, "UNKNOWN")
+  expect_equal(r$checks$completeness$verdict, "UNKNOWN")
+  expect_true(grepl("simulated unexpected bug", r$checks$completeness$consequence))
+})
+
+test_that("an all-zero matrix is a typed failure, not a nonsense percentage", {
+  # col_sum_spread computed as 0 / max(0, 1) = 0, which used to read as
+  # "every sample totals the same to within -100.00%" once flat_totals fired
+  z <- matrix(0, nrow = 20, ncol = 4, dimnames = list(paste0("g", 1:20), NULL))
+  r <- expect_no_error(attest_counts(z))
+  expect_equal(r$verdict, "UNKNOWN")
+  expect_false(grepl("-100", r$headline))
+  expect_true(grepl("zero", r$headline, ignore.case = TRUE))
+})
+
+test_that("identity on a 0-gene matrix is UNKNOWN, not a clean bill of health", {
+  # with no genes at all, at_sex_from_expression() and at_duplicate_pairs()
+  # both degrade to "nothing to say" and verdict stayed at its PERMITTED
+  # default, reporting samples consistent with labels that were never checked
+  e <- matrix(numeric(0), nrow = 0, ncol = 4, dimnames = list(NULL, paste0("s", 1:4)))
+  r <- attest_identity(e)
+  expect_equal(r$verdict, "UNKNOWN")
+})
+
 test_that("a matrix with Inf is a typed failure, not a crash (found on GSE140150)", {
   # a real published "counts" file that was actually a DE-results table: a
   # fold-change column reads Inf wherever the denominator group is all-zero.

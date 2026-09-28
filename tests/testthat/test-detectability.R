@@ -52,6 +52,41 @@ test_that("the detectable change is the one that holds in both directions", {
   expect_true(is.infinite(at_mdfc(0.3, 0.05, 4, z)))
 })
 
+test_that("a zero-total sample is a typed UNKNOWN, not a crash", {
+  # sf <- colSums(m)/mean(colSums(m)) makes a zero-total sample's size factor
+  # 0; dividing by that turns its whole column NaN, rowMeans() then makes mu
+  # NaN for every gene, and `if (!any(assessable))` on an all-NA vector used
+  # to raise "missing value where TRUE/FALSE needed" instead of reporting
+  o <- at_fx_det()
+  m <- o$m; m[, 3] <- 0L
+  grp <- factor(rep(c("a", "b"), each = 4))
+  r <- expect_no_error(attest_detectability(m, group = grp))
+  expect_equal(r$verdict, "UNKNOWN")
+  expect_match(r$headline, "zero total counts")
+})
+
+test_that("NA or Inf in the matrix is a typed UNKNOWN, not a crash", {
+  o <- at_fx_det()
+  grp <- factor(rep(c("a", "b"), each = 4))
+  na_m <- o$m; na_m[1, 1] <- NA
+  expect_equal(expect_no_error(attest_detectability(na_m, group = grp))$verdict, "UNKNOWN")
+  inf_m <- o$m; inf_m[1, 1] <- Inf
+  expect_equal(expect_no_error(attest_detectability(inf_m, group = grp))$verdict, "UNKNOWN")
+})
+
+test_that("a DESeq2 fit failure is distinguished from DESeq2 not being installed", {
+  skip_if_not_installed("DESeq2")
+  o <- at_fx_det()
+  original <- at_dispersion_deseq2
+  at_dispersion_deseq2 <<- function(...) NULL   # simulate a failed fit, DESeq2 still "installed"
+  on.exit(at_dispersion_deseq2 <<- original, add = TRUE)
+
+  d <- attest_detectability(o$m, group = o$sh$dex, metadata = o$sh, design = ~ cell + dex)
+  expect_false(d$measurements$deseq2_dispersion)
+  expect_true(any(grepl("dispersion fit failed", d$not_assessed) | grepl("dispersion fit failed", d$consequence)))
+  expect_false(any(grepl("DESeq2 is not installed", c(d$not_assessed, d$consequence))))
+})
+
 test_that("genes that cannot show a change are described in words, not as Inf", {
   o <- at_fx_det()
   d <- attest_detectability(o$m, group = o$sh$dex, dispersion = "moments")

@@ -49,9 +49,27 @@ attest_identity <- function(x, metadata = NULL, sex_col = NULL, dup_floor = 0.99
                          error = function(e) NULL)
   }
 
+  al <- at_align_metadata(m, metadata)
+  if (!is.null(al$mismatch)) {
+    return(at_result(
+      "NOT PERMITTED",
+      "The sample sheet's row names do not match the matrix's column names.",
+      c(if (length(al$mismatch$extra_mat))
+          sprintf("in the matrix but not the sample sheet: %s", paste(utils::head(al$mismatch$extra_mat, 6), collapse = ", ")),
+        if (length(al$mismatch$extra_meta))
+          sprintf("in the sample sheet but not the matrix: %s", paste(utils::head(al$mismatch$extra_meta, 6), collapse = ", "))),
+      "Both the matrix and the sample sheet carry names, but they disagree, so rows cannot be assumed to be in the matrix's column order. Every downstream comparison - sex against the label, duplicate detection, the design - would pair each sample with the wrong sheet row.",
+      character(0), list(mismatch = al$mismatch)))
+  }
+  metadata <- al$metadata
+  if (nrow(m) == 0) {
+    return(at_result("UNKNOWN", "The matrix has no genes (0 rows), so nothing here can be checked.",
+                     character(0), NULL, character(0), list(dim = dim(m))))
+  }
+
   ev <- list(dim = dim(m))
-  na <- character(0)
-  lines <- character(0)
+  na <- if (!is.null(al$not_assessed)) al$not_assessed else character(0)
+  lines <- if (!is.null(al$note)) al$note else character(0)
   verdict <- "PERMITTED"
   headline <- "Samples are consistent with their labels."
 

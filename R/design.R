@@ -56,6 +56,19 @@ attest_design <- function(x, metadata, design, of_interest = NULL) {
                      character(0), NULL, character(0),
                      list(n_meta = nrow(metadata), n_samples = ncol(m))))
   }
+  al <- at_align_metadata(m, metadata)
+  if (!is.null(al$mismatch)) {
+    return(at_result(
+      "NOT PERMITTED",
+      "The sample sheet's row names do not match the matrix's column names.",
+      c(if (length(al$mismatch$extra_mat))
+          sprintf("in the matrix but not the sample sheet: %s", paste(utils::head(al$mismatch$extra_mat, 6), collapse = ", ")),
+        if (length(al$mismatch$extra_meta))
+          sprintf("in the sample sheet but not the matrix: %s", paste(utils::head(al$mismatch$extra_meta, 6), collapse = ", "))),
+      "Both the matrix and the sample sheet carry names, but they disagree, so rows cannot be assumed to be in the matrix's column order. Group sizes, the model matrix and every coefficient would be computed against the wrong sample.",
+      character(0), list(mismatch = al$mismatch)))
+  }
+  metadata <- al$metadata
 
   terms_ <- all.vars(design)
   missing_vars <- setdiff(terms_, names(metadata))
@@ -73,11 +86,22 @@ attest_design <- function(x, metadata, design, of_interest = NULL) {
     return(at_result("UNKNOWN", "The design formula could not be turned into a model matrix.",
                      character(0), NULL, character(0), list()))
   }
+  if (nrow(mm) != nrow(metadata)) {
+    # model.matrix()'s default na.action is na.omit: an NA in any design term
+    # silently drops that sample's row rather than erroring. Left unchecked,
+    # every count downstream (rank, group sizes, VIF) is computed on fewer
+    # rows than n_samples claims, without saying so.
+    return(at_result("UNKNOWN",
+                     sprintf("The design formula dropped %d of %d sample sheet rows building the model matrix - model.matrix() silently omits rows with NA in a design term.",
+                             nrow(metadata) - nrow(mm), nrow(metadata)),
+                     character(0), NULL, character(0),
+                     list(n_meta = nrow(metadata), n_mm = nrow(mm))))
+  }
 
   ev <- list(n_samples = ncol(m), design = deparse(design), of_interest = of_interest,
              rank = qr(mm)$rank, n_coefficients = ncol(mm))
-  na <- character(0)
-  lines <- character(0)
+  na <- if (!is.null(al$not_assessed)) al$not_assessed else character(0)
+  lines <- if (!is.null(al$note)) al$note else character(0)
 
   # --- 1. is every coefficient estimable? ---------------------------------
   if (ev$rank < ev$n_coefficients) {
@@ -250,9 +274,25 @@ at_omitted_variables <- function(metadata, of_interest, design_vars) {
   out
 }
 
-# which model-matrix columns came from this variable
+# which model-matrix columns came from this variable. Computed from the
+# variable's own values rather than by matching colnames(mm) against "^var" -
+# that prefix match collided with any OTHER term whose name happens to start
+# with var's name (a design of ~ cell + celltype attributed celltype's
+# coefficients to cell too, and inflated its VIF with them). Assumes the
+# default treatment contrasts model.matrix() uses everywhere else in this
+# package; a column for an interaction involving var is intentionally not
+# matched here - it is a different coefficient, not var's own effect.
 at_coefficient_columns <- function(mm, var, metadata) {
-  setdiff(grep(paste0("^", var), colnames(mm)), 1L)
+  v <- metadata[[var]]
+  if (is.null(v)) return(integer(0))
+  if (is.factor(v) || is.character(v) || is.logical(v)) {
+    lv <- levels(droplevels(as.factor(v)))
+    if (length(lv) < 2) return(integer(0))
+    expected <- paste0(var, lv[-1])                 # reference level has no column
+    cols <- stats::na.omit(match(expected, colnames(mm)))
+    return(setdiff(as.integer(cols), 1L))
+  }
+  setdiff(which(colnames(mm) == var), 1L)            # continuous: the bare variable name
 }
 
 # variance inflation for one coefficient: how much of it the other terms explain
