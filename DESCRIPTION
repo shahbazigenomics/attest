@@ -20,7 +20,7 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Depends: R (>= 3.5.0)
 Imports: methods, stats, utils
-Suggests: testthat (>= 3.0.0), knitr, rmarkdown, SummarizedExperiment, DESeq2, edgeR
+Suggests: testthat (>= 3.0.0), knitr, rmarkdown, SummarizedExperiment, DESeq2, edgeR, data.table, readxl
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.0

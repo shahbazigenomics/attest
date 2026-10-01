@@ -45,14 +45,13 @@ of prose.
 `all` is resumable: each series is saved as it finishes and skipped on a
 re-run, so an interrupted run can continue rather than restart.
 
-## Requirements (gap found while checking this)
+## Requirements
 
 Running `check`/`pilot`/`all` sources `lib_parse.R`, which uses `data.table`
 and `readxl`; `summary.R`/`stages.R` use `DESeq2` for the consequence stage.
-`data.table` is **not currently declared anywhere** (not in `DESCRIPTION`,
-not in `README.md`'s package list) and should be added to `DESCRIPTION`'s
-`Suggests` alongside `readxl` and `DESeq2` so a clean checkout's dependency
-list is complete.
+All three (plus `edgeR`) are declared in `DESCRIPTION`'s `Suggests`.
+(`data.table` and `readxl` were missing from `Suggests` when this file was
+first written and have since been added.)
 
 ## What was and wasn't verified when this file was written
 
