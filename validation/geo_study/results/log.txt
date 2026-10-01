@@ -1,0 +1,1023 @@
+[15:11:16] package readxl     MISSING 
+[15:11:19] package DESeq2     ok 
+[15:11:22] series matching the search: 296352 
+[15:11:22] test series: GSE250293 
+[15:11:25] NCBI raw counts: https://www.ncbi.nlm.nih.gov/geo/download/?type=rnaseq_counts&acc=GSE250293&format=file&file=GSE250293_raw_counts_GRCh38.p13_NCBI.tsv.gz  (found on the download page) 
+[15:11:27]   size: 0.3 MB 
+[15:11:30] annotation FAILED: annotation has no GeneID column 
+[15:12:05] series matrix files: GSE250293_series_matrix.txt.gz 
+[15:12:08] supplementary files: GSE250293_RAW.tar, filelist.txt 
+[15:12:12] NCBI raw counts read: 39376 genes x 5 samples 
+[15:12:12] CHECK FAILED - paste this log to Claude 
+[15:22:09] package readxl     ok 
+[15:22:12] package DESeq2     ok 
+[15:22:14] series matching the search: 296352 
+[15:22:14]   NCBI read the search as: "rnaseq counts"[Filter] AND "Homo sapiens"[Organism] AND "gse"[Entry Type] 
+[15:22:17]   same search without the counts filter: 296352 (the filter keeps 100.0%) 
+[15:22:17]   WARNING: the counts filter removes nothing - it is being ignored 
+[15:22:17] test series: GSE250293 
+[15:22:20] NCBI raw counts: https://www.ncbi.nlm.nih.gov/geo/download/?type=rnaseq_counts&acc=GSE250293&format=file&file=GSE250293_raw_counts_GRCh38.p13_NCBI.tsv.gz  (found on the download page) 
+[15:22:22]   size: 0.3 MB 
+[15:22:22] annotation URL: https://www.ncbi.nlm.nih.gov/geo/download/?format=file&type=rnaseq_counts&file=Human.GRCh38.p13.annot.tsv.gz 
+[15:23:03] GEO annotation unavailable (NCBI returned a web page (bot check or error) instead of the file: https://www.ncbi.nlm.nih.gov/geo/download/?format=file&type=rnaseq_counts&file=Human.GRCh38.p13.annot.tsv.gz) - using NCBI Gene's gene_info instead 
+[15:23:10] annotation: 193911 genes; 38517 with Ensembl IDs; 193911 with symbols 
+[15:23:12] series matrix files: GSE250293_series_matrix.txt.gz 
+[15:23:14] supplementary files: GSE250293_RAW.tar, filelist.txt 
+[15:23:15] NCBI raw counts read: 39376 genes x 5 samples 
+[15:23:15] CHECK FAILED - paste this log to Claude 
+[15:32:08] package readxl     ok 
+[15:32:10] package DESeq2     ok 
+[15:32:19] counts filter: 296352 series; without it: 296352  (NCBI read the search as: "rnaseq counts"[Filter] AND "Homo sapiens"[Organism] AND gse[ETYP]) 
+[15:32:19]   probe "rnaseq counts"[Filter]        27715 
+[15:32:21]   probe rnaseq_counts[Filter]          27715 
+[15:32:24]   probe "rnaseq counts"[All Fields]    27918 
+[15:32:26]   probe gse[ETYP]                      296352 
+[15:32:29]   probe "Homo sapiens"[Organism]       4722720 
+[15:32:31] sampling frame: all human expression-by-sequencing series; NCBI counts checked per series 
+[15:32:31]   search: "Homo sapiens"[Organism] AND gse[ETYP] AND "expression profiling by high throughput sequencing"[DataSet Type] 
+[15:32:31]   entries in the frame: 145382 
+[15:32:40]   share of entries that are series (600 UIDs from start, middle, end): 100.0% 
+[15:33:21]   series with NCBI counts among the first 15 tried: none 
+[15:33:21] CHECK FAILED - no NCBI counts found for any tried series; paste this log to Claude 
+[15:36:55] package readxl     ok 
+[15:36:58] package DESeq2     ok 
+[15:37:03] counts filter: 27715 series; without it: 133810  (NCBI read the search as: "rnaseq counts"[Filter] AND "Homo sapiens"[Organism] AND gse[ETYP]) 
+[15:37:03]   probe "rnaseq counts"[Filter]        27715 
+[15:37:05]   probe rnaseq_counts[Filter]          27715 
+[15:37:08]   probe "rnaseq counts"[All Fields]    27918 
+[15:37:10]   probe gse[ETYP]                      296352 
+[15:37:12]   probe "Homo sapiens"[Organism]       4722720 
+[15:37:15] sampling frame: NCBI counts filter 
+[15:37:15]   search: "rnaseq counts"[Filter] AND "Homo sapiens"[Organism] AND gse[ETYP] 
+[15:37:15]   entries in the frame: 27715 
+[15:37:22]   share of entries that are series (600 UIDs from start, middle, end): 100.0% 
+[15:37:27]   series with NCBI counts among the first 1 tried: yes 
+[15:37:27] test series: GSE250293 
+[15:37:27] NCBI raw counts: https://www.ncbi.nlm.nih.gov/geo/download/?type=rnaseq_counts&acc=GSE250293&format=file&file=GSE250293_raw_counts_GRCh38.p13_NCBI.tsv.gz  (found on the download page) 
+[15:37:27]   download page recognised as served: yes 
+[15:37:30]   size: 0.3 MB 
+[15:37:30] annotation URL: https://www.ncbi.nlm.nih.gov/geo/download/?format=file&type=rnaseq_counts&file=Human.GRCh38.p13.annot.tsv.gz 
+[15:38:11] GEO annotation unavailable (NCBI returned a web page (bot check or error) instead of the file: https://www.ncbi.nlm.nih.gov/geo/download/?format=file&type=rnaseq_counts&file=Human.GRCh38.p13.annot.tsv.gz) - using NCBI Gene's gene_info instead 
+[15:38:13] annotation: 193911 genes; 38517 with Ensembl IDs; 193911 with symbols 
+[15:38:16] series matrix files: GSE250293_series_matrix.txt.gz 
+[15:38:18] supplementary files: GSE250293_RAW.tar, filelist.txt 
+[15:38:18] NCBI raw counts read: 39376 genes x 5 samples 
+[15:38:18] CHECK PASSED - run the pilot next 
+[15:39:28] sampling frame: NCBI counts filter - "rnaseq counts"[Filter] AND "Homo sapiens"[Organism] AND gse[ETYP] 
+[15:39:40] series available: 27715 
+[15:39:40] processing GSE185245 
+[15:40:30] GEO annotation unavailable (NCBI returned a web page (bot check or error) instead of the file: https://www.ncbi.nlm.nih.gov/geo/download/?format=file&type=rnaseq_counts&file=Human.GRCh38.p13.annot.tsv.gz) - using NCBI Gene's gene_info instead 
+[15:41:05]   GSE185245: ok, 1 file(s) audited 
+[15:41:05] processing GSE161013 
+[15:41:30]   GSE161013: error: subscript out of bounds 
+[15:41:30] processing GSE110390 
+[15:41:53]   GSE110390: ok, 2 file(s) audited 
+[15:41:53] processing GSE219983 
+[15:42:11]   GSE219983: ok, 1 file(s) audited 
+[15:42:11] processing GSE122702 
+[15:42:40]   GSE122702: ok, 1 file(s) audited 
+[15:42:40] processing GSE181462 
+[15:43:01]   GSE181462: ok, 1 file(s) audited 
+[15:43:01] processing GSE71536 
+[15:43:22]   GSE71536: ok, 1 file(s) audited 
+[15:43:22] processing GSE181991 
+[15:43:41]   GSE181991: ok, 1 file(s) audited 
+[15:43:41] processing GSE143735 
+[15:43:59]   GSE143735: ok, 1 file(s) audited 
+[15:43:59] processing GSE218546 
+[15:44:17]   GSE218546: ok, 1 file(s) audited 
+[15:44:17] processing GSE162669 
+[15:44:38]   GSE162669: ok, 1 file(s) audited 
+[15:44:38] processing GSE158530 
+[15:45:16]   GSE158530: ok, 3 file(s) audited 
+[15:45:16] processing GSE115255 
+[15:45:42]   GSE115255: ok, 1 file(s) audited 
+[15:45:42] processing GSE253455 
+[15:45:55]   GSE253455: no matrix file 
+[15:45:55] processing GSE190775 
+[15:46:19]   GSE190775: ok, 1 file(s) audited 
+[15:46:19] processing GSE251645 
+[15:46:40]   GSE251645: ok, 1 file(s) audited 
+[15:46:40] processing GSE158221 
+[15:47:10]   GSE158221: ok, 1 file(s) audited 
+[15:47:10] processing GSE111823 
+[15:47:26]   GSE111823: ok, 1 file(s) audited 
+[15:47:26] processing GSE94613 
+[15:47:46]   GSE94613: ok, 1 file(s) audited 
+[15:47:46] processing GSE58387 
+[15:48:02]   GSE58387: ok, 1 file(s) audited 
+[15:48:02] series processed: 20, with an auditable author matrix: 18 
+[15:48:03] wrote validation/geo_study/results/summary.md 
+[16:03:59] processing GSE185245 
+[16:04:43] GEO annotation unavailable (NCBI returned a web page (bot check or error) instead of the file: https://www.ncbi.nlm.nih.gov/geo/download/?format=file&type=rnaseq_counts&file=Human.GRCh38.p13.annot.tsv.gz) - using NCBI Gene's gene_info instead 
+[16:05:07]   GSE185245: ok, 3 file(s) audited 
+[16:05:07] processing GSE161013 
+[16:05:17]   GSE161013: ok, 1 file(s) audited 
+[16:05:17] processing GSE110390 
+[16:05:29]   GSE110390: ok, 2 file(s) audited 
+[16:05:29] processing GSE219983 
+[16:05:36]   GSE219983: per-sample files only (RAW.tar) 
+[16:05:36] processing GSE122702 
+[16:05:48]   GSE122702: ok, 1 file(s) audited 
+[16:05:48] processing GSE181462 
+[16:05:55]   GSE181462: per-sample files only (RAW.tar) 
+[16:05:55] processing GSE71536 
+[16:06:03]   GSE71536: per-sample files only (RAW.tar) 
+[16:06:03] processing GSE181991 
+[16:06:12]   GSE181991: ok, 1 file(s) audited 
+[16:06:12] processing GSE143735 
+[16:06:19]   GSE143735: per-sample files only (RAW.tar) 
+[16:06:19] processing GSE218546 
+[16:06:31]   GSE218546: ok, 1 file(s) audited 
+[16:06:31] processing GSE162669 
+[16:07:18]   GSE162669: ok, 0 file(s) audited 
+[16:07:18] processing GSE158530 
+[16:07:42]   GSE158530: ok, 3 file(s) audited 
+[16:07:42] processing GSE115255 
+[16:07:57]   GSE115255: ok, 0 file(s) audited 
+[16:07:57] processing GSE253455 
+[16:08:04]   GSE253455: no matrix file 
+[16:08:04] processing GSE190775 
+[16:08:14]   GSE190775: ok, 1 file(s) audited 
+[16:08:14] processing GSE251645 
+[16:08:24]   GSE251645: ok, 1 file(s) audited 
+[16:08:24] processing GSE158221 
+[16:08:46]   GSE158221: ok, 1 file(s) audited 
+[16:08:46] processing GSE111823 
+[16:08:53]   GSE111823: per-sample files only (RAW.tar) 
+[16:08:53] processing GSE94613 
+[16:09:00]   GSE94613: per-sample files only (RAW.tar) 
+[16:09:00] processing GSE58387 
+[16:09:07]   GSE58387: per-sample files only (RAW.tar) 
+[16:09:07] series processed: 20, with an auditable author matrix: 10 
+[16:09:07] wrote validation/geo_study/results/summary.md 
+[17:33:15] processing GSE185245 
+[17:33:59] GEO annotation unavailable (NCBI returned a web page (bot check or error) instead of the file: https://www.ncbi.nlm.nih.gov/geo/download/?format=file&type=rnaseq_counts&file=Human.GRCh38.p13.annot.tsv.gz) - using NCBI Gene's gene_info instead 
+[17:34:31]   GSE185245: ok, 3 file(s) audited 
+[17:34:31] processing GSE161013 
+[17:34:41]   GSE161013: ok, 1 file(s) audited 
+[17:34:41] processing GSE110390 
+[17:34:54]   GSE110390: ok, 2 file(s) audited 
+[17:34:54] processing GSE219983 
+[17:35:01]   GSE219983: per-sample files only (RAW.tar) 
+[17:35:01] processing GSE122702 
+[17:35:14]   GSE122702: ok, 1 file(s) audited 
+[17:35:14] processing GSE181462 
+[17:35:21]   GSE181462: per-sample files only (RAW.tar) 
+[17:35:21] processing GSE71536 
+[17:35:28]   GSE71536: per-sample files only (RAW.tar) 
+[17:35:28] processing GSE181991 
+[17:35:38]   GSE181991: ok, 1 file(s) audited 
+[17:35:38] processing GSE143735 
+[17:35:45]   GSE143735: per-sample files only (RAW.tar) 
+[17:35:45] processing GSE218546 
+[17:35:57]   GSE218546: ok, 1 file(s) audited 
+[17:35:57] processing GSE162669 
+[17:36:07]   GSE162669: ok, 1 file(s) audited 
+[17:36:07] processing GSE158530 
+[17:36:31]   GSE158530: ok, 3 file(s) audited 
+[17:36:31] processing GSE115255 
+[17:36:42]   GSE115255: ok, 1 file(s) audited 
+[17:36:42] processing GSE253455 
+[17:36:48]   GSE253455: no matrix file 
+[17:36:48] processing GSE190775 
+[17:36:58]   GSE190775: ok, 1 file(s) audited 
+[17:36:58] processing GSE251645 
+[17:37:07]   GSE251645: ok, 1 file(s) audited 
+[17:37:07] processing GSE158221 
+[17:37:32]   GSE158221: ok, 1 file(s) audited 
+[17:37:32] processing GSE111823 
+[17:37:38]   GSE111823: per-sample files only (RAW.tar) 
+[17:37:38] processing GSE94613 
+[17:37:45]   GSE94613: per-sample files only (RAW.tar) 
+[17:37:45] processing GSE58387 
+[17:37:52]   GSE58387: per-sample files only (RAW.tar) 
+[17:37:52] series processed: 20, with an auditable author matrix: 12 
+[17:37:52] wrote validation/geo_study/results/summary.md 
+[18:09:23] processing GSE185245 
+[18:10:07] GEO annotation unavailable (NCBI returned a web page (bot check or error) instead of the file: https://www.ncbi.nlm.nih.gov/geo/download/?format=file&type=rnaseq_counts&file=Human.GRCh38.p13.annot.tsv.gz) - using NCBI Gene's gene_info instead 
+[18:10:39]   GSE185245: ok, 3 file(s) audited 
+[18:10:39] processing GSE161013 
+[18:10:49]   GSE161013: ok, 1 file(s) audited 
+[18:10:49] processing GSE110390 
+[18:11:29]   GSE110390: ok, 2 file(s) audited 
+[18:11:29] processing GSE219983 
+[18:11:36]   GSE219983: per-sample files only (RAW.tar) 
+[18:11:36] processing GSE122702 
+[18:11:49]   GSE122702: ok, 1 file(s) audited 
+[18:11:49] processing GSE181462 
+[18:11:56]   GSE181462: per-sample files only (RAW.tar) 
+[18:11:56] processing GSE71536 
+[18:12:03]   GSE71536: per-sample files only (RAW.tar) 
+[18:12:03] processing GSE181991 
+[18:12:13]   GSE181991: ok, 1 file(s) audited 
+[18:12:13] processing GSE143735 
+[18:12:20]   GSE143735: per-sample files only (RAW.tar) 
+[18:12:20] processing GSE218546 
+[18:12:32]   GSE218546: ok, 1 file(s) audited 
+[18:12:32] processing GSE162669 
+[18:12:42]   GSE162669: ok, 1 file(s) audited 
+[18:12:42] processing GSE158530 
+[18:13:05]   GSE158530: ok, 3 file(s) audited 
+[18:13:05] processing GSE115255 
+[18:13:29]   GSE115255: ok, 1 file(s) audited 
+[18:13:29] processing GSE253455 
+[18:13:36]   GSE253455: no matrix file 
+[18:13:36] processing GSE190775 
+[18:13:46]   GSE190775: ok, 1 file(s) audited 
+[18:13:47] processing GSE251645 
+[18:13:56]   GSE251645: ok, 1 file(s) audited 
+[18:13:56] processing GSE158221 
+[18:14:22]   GSE158221: ok, 1 file(s) audited 
+[18:14:22] processing GSE111823 
+[18:14:30]   GSE111823: per-sample files only (RAW.tar) 
+[18:14:30] processing GSE94613 
+[18:14:36]   GSE94613: per-sample files only (RAW.tar) 
+[18:14:36] processing GSE58387 
+[18:14:43]   GSE58387: per-sample files only (RAW.tar) 
+[18:14:43] series processed: 20, with an auditable author matrix: 12 
+[18:14:43] wrote validation/geo_study/results/summary.md 
+[18:25:36] GEO annotation unavailable (NCBI returned a web page (bot check or error) instead of the file: https://www.ncbi.nlm.nih.gov/geo/download/?format=file&type=rnaseq_counts&file=Human.GRCh38.p13.annot.tsv.gz) - using NCBI Gene's gene_info instead 
+[18:25:38] wrote validation/geo_study/results/summary.md 
+[18:37:44] processing GSE172052 
+[18:40:37] GEO annotation unavailable (NCBI returned a web page (bot check or error) instead of the file: https://www.ncbi.nlm.nih.gov/geo/download/?format=file&type=rnaseq_counts&file=Human.GRCh38.p13.annot.tsv.gz) - using NCBI Gene's gene_info instead 
+[18:52:44]   GSE172052: error: missing value where TRUE/FALSE needed 
+[18:52:44] processing GSE163622 
+[18:53:33]   GSE163622: error: missing value where TRUE/FALSE needed 
+[18:53:33] processing GSE95013 
+[18:57:14]   GSE95013: per-sample files only (RAW.tar) 
+[18:57:14] processing GSE155285 
+[18:58:12]   GSE155285: per-sample files only (RAW.tar) 
+[18:58:12] processing GSE141645 
+[19:04:43]   GSE141645: ok, 3 file(s) audited 
+[19:04:43] processing GSE225517 
+[19:06:37]   GSE225517: ok, 2 file(s) audited 
+[19:06:37] processing GSE137480 
+[19:12:59]   GSE137480: ok, 0 file(s) audited 
+[19:12:59] processing GSE137295 
+[19:20:29]   GSE137295: ok, 1 file(s) audited 
+[19:20:29] processing GSE171226 
+[19:23:02]   GSE171226: per-sample files only (RAW.tar) 
+[19:23:02] processing GSE133420 
+[19:27:25]   GSE133420: ok, 0 file(s) audited 
+[19:27:25] processing GSE190708 
+[19:33:00]   GSE190708: per-sample files only (RAW.tar) 
+[19:33:00] processing GSE118431 
+[19:41:12]   GSE118431: error: missing value where TRUE/FALSE needed 
+[19:41:12] processing GSE197602 
+[19:43:19]   GSE197602: per-sample files only (RAW.tar) 
+[19:43:19] processing GSE68040 
+[19:44:04]   GSE68040: ok, 1 file(s) audited 
+[19:44:04] processing GSE241118 
+[19:45:13]   GSE241118: ok, 0 file(s) audited 
+[19:45:13] processing GSE138691 
+[19:52:03]   GSE138691: ok, 0 file(s) audited 
+[19:52:03] processing GSE136841 
+[19:52:23]   GSE136841: per-sample files only (RAW.tar) 
+[19:52:23] processing GSE126865 
+[19:53:24]   GSE126865: ok, 1 file(s) audited 
+[19:53:24] processing GSE131147 
+[19:54:10]   GSE131147: ok, 1 file(s) audited 
+[19:54:10] processing GSE126753 
+[19:55:42]   GSE126753: ok, 1 file(s) audited 
+[19:55:42] processing GSE95820 
+[19:57:19]   GSE95820: ok, 1 file(s) audited 
+[19:57:19] processing GSE149374 
+[19:59:43]   GSE149374: ok, 1 file(s) audited 
+[19:59:43] processing GSE137768 
+[20:00:50]   GSE137768: ok, 1 file(s) audited 
+[20:00:50] processing GSE150616 
+[20:01:06]   GSE150616: per-sample files only (RAW.tar) 
+[20:01:06] processing GSE147413 
+[20:02:27]   GSE147413: error: missing value where TRUE/FALSE needed 
+[20:02:27] processing GSE134886 
+[20:03:03]   GSE134886: ok, 1 file(s) audited 
+[20:03:03] processing GSE183754 
+[20:06:13]   GSE183754: ok, 1 file(s) audited 
+[20:06:13] processing GSE201877 
+[20:06:48]   GSE201877: per-sample files only (RAW.tar) 
+[20:06:48] processing GSE186895 
+[20:07:34]   GSE186895: ok, 1 file(s) audited 
+[20:07:34] processing GSE232044 
+[20:09:27]   GSE232044: per-sample files only (RAW.tar) 
+[20:09:27] processing GSE173735 
+[20:10:24]   GSE173735: error: missing value where TRUE/FALSE needed 
+[20:10:24] processing GSE87748 
+[20:11:09]   GSE87748: ok, 2 file(s) audited 
+[20:11:09] processing GSE39121 
+[20:11:30]   GSE39121: ok, 1 file(s) audited 
+[20:11:30] processing GSE65655 
+[20:11:58]   GSE65655: ok, 0 file(s) audited 
+[20:11:58] processing GSE108266 
+[20:12:24]   GSE108266: per-sample files only (RAW.tar) 
+[20:12:24] processing GSE196387 
+[20:13:12]   GSE196387: ok, 1 file(s) audited 
+[20:13:12] processing GSE139101 
+[20:15:10]   GSE139101: ok, 1 file(s) audited 
+[20:15:10] processing GSE91477 
+[20:15:40]   GSE91477: per-sample files only (RAW.tar) 
+[20:15:40] processing GSE124519 
+[20:19:51]   GSE124519: ok, 0 file(s) audited 
+[20:19:51] processing GSE83664 
+[20:20:04]   GSE83664: no matrix file 
+[20:20:04] processing GSE138217 
+[20:22:22]   GSE138217: ok, 1 file(s) audited 
+[20:22:22] processing GSE95299 
+[20:23:11]   GSE95299: ok, 1 file(s) audited 
+[20:23:11] processing GSE154059 
+[20:23:30]   GSE154059: per-sample files only (RAW.tar) 
+[20:23:30] processing GSE213620 
+[20:23:50]   GSE213620: ok, 1 file(s) audited 
+[20:23:50] processing GSE219044 
+[21:23:56]   GSE219044: per-sample files only (RAW.tar) 
+[21:23:56] processing GSE89065 
+[22:10:48]   GSE89065: unavailable: cannot open URL 'https://www.ncbi.nlm.nih.gov/geo/download/?type=rnaseq_counts&acc=GSE89065&format=file&file=GSE89065_raw_counts_GRCh38.p13_NCBI.tsv.gz' 
+[22:10:48] processing GSE253433 
+[22:47:40]   GSE253433: ok, 1 file(s) audited 
+[22:47:40] processing GSE219919 
+[22:47:54]   GSE219919: per-sample files only (RAW.tar) 
+[22:47:54] processing GSE254310 
+[22:48:19]   GSE254310: ok, 1 file(s) audited 
+[22:48:19] processing GSE180883 
+[22:48:41]   GSE180883: ok, 1 file(s) audited 
+[22:48:41] processing GSE116580 
+[22:49:53]   GSE116580: ok, 1 file(s) audited 
+[22:49:53] processing GSE175477 
+[22:50:06]   GSE175477: no matrix file 
+[22:50:06] processing GSE70073 
+[22:50:30]   GSE70073: ok, 1 file(s) audited 
+[22:50:30] processing GSE177247 
+[22:50:43]   GSE177247: per-sample files only (RAW.tar) 
+[22:50:43] processing GSE160159 
+[22:51:28]   GSE160159: error: missing value where TRUE/FALSE needed 
+[22:51:28] processing GSE200020 
+[22:52:33]   GSE200020: ok, 2 file(s) audited 
+[22:52:33] processing GSE212695 
+[22:53:27]   GSE212695: ok, 2 file(s) audited 
+[22:53:27] processing GSE210101 
+[22:54:09]   GSE210101: ok, 2 file(s) audited 
+[22:54:09] processing GSE147657 
+[22:54:31]   GSE147657: ok, 0 file(s) audited 
+[22:54:31] processing GSE43143 
+[22:54:51]   GSE43143: error: missing value where TRUE/FALSE needed 
+[22:54:51] processing GSE112628 
+[22:55:11]   GSE112628: ok, 1 file(s) audited 
+[22:55:11] processing GSE113790 
+[22:55:29]   GSE113790: ok, 1 file(s) audited 
+[22:55:29] processing GSE195712 
+[22:55:43]   GSE195712: per-sample files only (RAW.tar) 
+[22:55:44] processing GSE177757 
+[22:56:12]   GSE177757: error: missing value where TRUE/FALSE needed 
+[22:56:12] processing GSE167305 
+[22:57:05]   GSE167305: ok, 1 file(s) audited 
+[22:57:05] processing GSE185280 
+[22:57:23]   GSE185280: per-sample files only (RAW.tar) 
+[22:57:23] processing GSE151000 
+[22:57:49]   GSE151000: ok, 0 file(s) audited 
+[22:57:49] processing GSE57925 
+[22:58:01]   GSE57925: no matrix file 
+[22:58:01] processing GSE129014 
+[22:59:24]   GSE129014: ok, 3 file(s) audited 
+[22:59:24] processing GSE243702 
+[22:59:44]   GSE243702: ok, 1 file(s) audited 
+[22:59:44] processing GSE115565 
+[23:00:25]   GSE115565: ok, 1 file(s) audited 
+[23:00:25] processing GSE85107 
+[23:00:54]   GSE85107: ok, 1 file(s) audited 
+[23:00:54] processing GSE246708 
+[23:01:21]   GSE246708: ok, 1 file(s) audited 
+[23:01:21] processing GSE147669 
+[23:01:34]   GSE147669: per-sample files only (RAW.tar) 
+[23:01:34] processing GSE219842 
+[23:01:47]   GSE219842: per-sample files only (RAW.tar) 
+[23:01:47] processing GSE204868 
+[23:02:02]   GSE204868: per-sample files only (RAW.tar) 
+[23:02:02] processing GSE167089 
+[23:02:19]   GSE167089: per-sample files only (RAW.tar) 
+[23:02:19] processing GSE228624 
+[23:02:32]   GSE228624: per-sample files only (RAW.tar) 
+[23:02:32] processing GSE48286 
+[23:02:45]   GSE48286: per-sample files only (RAW.tar) 
+[23:02:45] processing GSE248935 
+[23:03:07]   GSE248935: ok, 1 file(s) audited 
+[23:03:07] processing GSE114016 
+[23:03:35]   GSE114016: ok, 1 file(s) audited 
+[23:03:35] processing GSE144527 
+[23:04:15]   GSE144527: ok, 2 file(s) audited 
+[23:04:15] processing GSE115650 
+[23:05:13]   GSE115650: ok, 3 file(s) audited 
+[23:05:13] processing GSE176777 
+[23:05:28]   GSE176777: per-sample files only (RAW.tar) 
+[23:05:28] processing GSE165032 
+[23:05:55]   GSE165032: ok, 1 file(s) audited 
+[23:05:55] processing GSE219997 
+[23:06:40]   GSE219997: per-sample files only (RAW.tar) 
+[23:06:40] processing GSE181274 
+[23:07:00]   GSE181274: ok, 1 file(s) audited 
+[23:07:00] processing GSE56748 
+[23:07:53]   GSE56748: ok, 1 file(s) audited 
+[23:07:53] processing GSE77085 
+[23:08:15]   GSE77085: ok, 1 file(s) audited 
+[23:08:15] processing GSE76433 
+[23:08:29]   GSE76433: per-sample files only (RAW.tar) 
+[23:08:29] processing GSE179519 
+[23:08:42]   GSE179519: per-sample files only (RAW.tar) 
+[23:08:42] processing GSE95057 
+[23:10:09]   GSE95057: ok, 3 file(s) audited 
+[23:10:09] processing GSE179864 
+[23:10:28]   GSE179864: ok, 1 file(s) audited 
+[23:10:28] processing GSE119668 
+[23:10:52]   GSE119668: ok, 1 file(s) audited 
+[23:10:52] processing GSE159220 
+[23:11:20]   GSE159220: ok, 1 file(s) audited 
+[23:11:20] processing GSE82184 
+[23:11:38]   GSE82184: ok, 1 file(s) audited 
+[23:11:38] processing GSE153813 
+[23:11:51]   GSE153813: per-sample files only (RAW.tar) 
+[23:11:51] processing GSE267860 
+[23:12:10]   GSE267860: ok, 1 file(s) audited 
+[23:12:10] processing GSE180166 
+[23:12:41]   GSE180166: ok, 2 file(s) audited 
+[23:12:41] processing GSE176366 
+[23:13:30]   GSE176366: ok, 1 file(s) audited 
+[23:13:30] processing GSE227925 
+[23:14:03]   GSE227925: ok, 2 file(s) audited 
+[23:14:03] processing GSE56055 
+[23:14:17]   GSE56055: per-sample files only (RAW.tar) 
+[23:14:17] processing GSE95374 
+[23:14:59]   GSE95374: ok, 3 file(s) audited 
+[23:14:59] processing GSE197514 
+[23:15:54]   GSE197514: ok, 1 file(s) audited 
+[23:15:54] processing GSE123468 
+[23:17:19]   GSE123468: ok, 3 file(s) audited 
+[23:17:19] processing GSE155336 
+[23:17:48]   GSE155336: ok, 2 file(s) audited 
+[23:17:48] processing GSE80844 
+[23:18:02]   GSE80844: per-sample files only (RAW.tar) 
+[23:18:02] processing GSE88061 
+[23:18:16]   GSE88061: per-sample files only (RAW.tar) 
+[23:18:16] processing GSE91737 
+[23:18:30]   GSE91737: per-sample files only (RAW.tar) 
+[23:18:30] processing GSE180640 
+[23:19:19]   GSE180640: ok, 2 file(s) audited 
+[23:19:19] processing GSE247120 
+[23:19:44]   GSE247120: ok, 0 file(s) audited 
+[23:19:44] processing GSE173771 
+[23:20:09]   GSE173771: ok, 1 file(s) audited 
+[23:20:09] processing GSE127973 
+[23:20:25]   GSE127973: per-sample files only (RAW.tar) 
+[23:20:25] processing GSE243422 
+[23:20:55]   GSE243422: ok, 1 file(s) audited 
+[23:20:55] processing GSE127188 
+[23:21:11]   GSE127188: per-sample files only (RAW.tar) 
+[23:21:11] processing GSE266150 
+[23:21:36]   GSE266150: ok, 1 file(s) audited 
+[23:21:36] processing GSE105773 
+[23:21:53]   GSE105773: per-sample files only (RAW.tar) 
+[23:21:53] processing GSE39661 
+[23:22:20]   GSE39661: ok, 2 file(s) audited 
+[23:22:20] processing GSE81239 
+[23:22:45]   GSE81239: ok, 2 file(s) audited 
+[23:22:45] processing GSE197487 
+[23:22:59]   GSE197487: per-sample files only (RAW.tar) 
+[23:22:59] processing GSE231341 
+[23:23:29]   GSE231341: ok, 1 file(s) audited 
+[23:23:29] processing GSE113585 
+[23:23:57]   GSE113585: ok, 0 file(s) audited 
+[23:23:57] processing GSE98230 
+[23:24:33]   GSE98230: ok, 1 file(s) audited 
+[23:24:33] processing GSE239906 
+[23:24:52]   GSE239906: per-sample files only (RAW.tar) 
+[23:24:52] processing GSE121575 
+[23:25:22]   GSE121575: ok, 2 file(s) audited 
+[23:25:22] processing GSE225453 
+[23:25:39]   GSE225453: no matrix file 
+[23:25:39] processing GSE138636 
+[23:26:06]   GSE138636: ok, 0 file(s) audited 
+[23:26:06] processing GSE153946 
+[23:26:28]   GSE153946: ok, 1 file(s) audited 
+[23:26:28] processing GSE120781 
+[23:26:42]   GSE120781: per-sample files only (RAW.tar) 
+[23:26:42] processing GSE91791 
+[23:26:57]   GSE91791: per-sample files only (RAW.tar) 
+[23:26:57] processing GSE178066 
+[23:27:10]   GSE178066: per-sample files only (RAW.tar) 
+[23:27:10] processing GSE207500 
+[23:27:23]   GSE207500: per-sample files only (RAW.tar) 
+[23:27:23] processing GSE219868 
+[23:27:36]   GSE219868: per-sample files only (RAW.tar) 
+[23:27:36] processing GSE176464 
+[23:27:50]   GSE176464: single-cell only 
+[23:27:50] processing GSE230200 
+[23:28:32]   GSE230200: ok, 2 file(s) audited 
+[23:28:32] processing GSE135036 
+[23:28:46]   GSE135036: per-sample files only (RAW.tar) 
+[23:28:46] processing GSE113350 
+[23:28:59]   GSE113350: no matrix file 
+[23:28:59] processing GSE58379 
+[23:29:20]   GSE58379: ok, 1 file(s) audited 
+[23:29:20] processing GSE240769 
+[23:30:01]   GSE240769: ok, 2 file(s) audited 
+[23:30:01] processing GSE151576 
+[23:30:48]   GSE151576: ok, 3 file(s) audited 
+[23:30:48] processing GSE219401 
+[23:31:01]   GSE219401: per-sample files only (RAW.tar) 
+[23:31:01] processing GSE183014 
+[23:31:15]   GSE183014: per-sample files only (RAW.tar) 
+[23:31:15] processing GSE86430 
+[23:31:45]   GSE86430: ok, 1 file(s) audited 
+[23:31:45] processing GSE243497 
+[23:32:36]   GSE243497: ok, 3 file(s) audited 
+[23:32:36] processing GSE220475 
+[23:33:02]   GSE220475: ok, 2 file(s) audited 
+[23:33:02] processing GSE212014 
+[23:33:27]   GSE212014: ok, 1 file(s) audited 
+[23:33:27] processing GSE226575 
+[23:33:56]   GSE226575: ok, 1 file(s) audited 
+[23:33:56] processing GSE166576 
+[23:34:16]   GSE166576: ok, 1 file(s) audited 
+[23:34:16] processing GSE126831 
+[23:34:48]   GSE126831: ok, 2 file(s) audited 
+[23:34:48] processing GSE135510 
+[23:35:02]   GSE135510: per-sample files only (RAW.tar) 
+[23:35:02] processing GSE183506 
+[23:35:15]   GSE183506: per-sample files only (RAW.tar) 
+[23:35:15] processing GSE160661 
+[23:35:36]   GSE160661: ok, 1 file(s) audited 
+[23:35:36] processing GSE119013 
+[23:35:55]   GSE119013: ok, 1 file(s) audited 
+[23:35:55] processing GSE47976 
+[23:36:08]   GSE47976: per-sample files only (RAW.tar) 
+[23:36:08] processing GSE50535 
+[23:36:45]   GSE50535: ok, 2 file(s) audited 
+[23:36:45] processing GSE149184 
+[23:37:15]   GSE149184: error: missing value where TRUE/FALSE needed 
+[23:37:15] processing GSE93330 
+[23:38:02]   GSE93330: per-sample files only (RAW.tar) 
+[23:38:02] processing GSE219714 
+[23:38:15]   GSE219714: per-sample files only (RAW.tar) 
+[23:38:15] processing GSE53655 
+[23:38:31]   GSE53655: per-sample files only (RAW.tar) 
+[23:38:31] processing GSE121501 
+[23:38:45]   GSE121501: per-sample files only (RAW.tar) 
+[23:38:45] processing GSE80846 
+[23:38:57]   GSE80846: per-sample files only (RAW.tar) 
+[23:38:57] processing GSE74461 
+[23:39:12]   GSE74461: per-sample files only (RAW.tar) 
+[23:39:12] processing GSE141945 
+[23:39:51]   GSE141945: ok, 1 file(s) audited 
+[23:39:51] processing GSE78628 
+[23:40:04]   GSE78628: per-sample files only (RAW.tar) 
+[23:40:04] processing GSE121332 
+[23:40:18]   GSE121332: per-sample files only (RAW.tar) 
+[23:40:18] processing GSE247049 
+[23:40:38]   GSE247049: ok, 1 file(s) audited 
+[23:40:38] processing GSE83724 
+[23:40:53]   GSE83724: per-sample files only (RAW.tar) 
+[23:40:53] processing GSE143155 
+[23:41:15]   GSE143155: ok, 1 file(s) audited 
+[23:41:15] processing GSE116865 
+[23:41:36]   GSE116865: error: missing value where TRUE/FALSE needed 
+[23:41:36] processing GSE148300 
+[23:41:57]   GSE148300: ok, 1 file(s) audited 
+[23:41:57] processing GSE184273 
+[23:42:18]   GSE184273: ok, 1 file(s) audited 
+[23:42:18] processing GSE75011 
+[23:42:46]   GSE75011: ok, 1 file(s) audited 
+[23:42:46] processing GSE91826 
+[23:43:00]   GSE91826: per-sample files only (RAW.tar) 
+[23:43:00] processing GSE232661 
+[23:43:14]   GSE232661: per-sample files only (RAW.tar) 
+[23:43:14] processing GSE70150 
+[23:43:34]   GSE70150: ok, 1 file(s) audited 
+[23:43:34] processing GSE217999 
+[23:44:04]   GSE217999: error: missing value where TRUE/FALSE needed 
+[23:44:04] processing GSE149359 
+[23:44:17]   GSE149359: per-sample files only (RAW.tar) 
+[23:44:17] processing GSE97440 
+[23:44:59]   GSE97440: ok, 3 file(s) audited 
+[23:44:59] processing GSE134489 
+[23:45:13]   GSE134489: per-sample files only (RAW.tar) 
+[23:45:13] processing GSE133822 
+[23:46:12]   GSE133822: ok, 1 file(s) audited 
+[23:46:12] processing GSE123416 
+[23:46:43]   GSE123416: ok, 1 file(s) audited 
+[23:46:43] processing GSE158833 
+[23:46:58]   GSE158833: per-sample files only (RAW.tar) 
+[23:46:58] processing GSE201695 
+[23:47:30]   GSE201695: ok, 2 file(s) audited 
+[23:47:30] processing GSE147504 
+[23:47:44]   GSE147504: per-sample files only (RAW.tar) 
+[23:47:44] processing GSE43472 
+[23:48:15]   GSE43472: ok, 1 file(s) audited 
+[23:48:15] processing GSE205522 
+[23:48:40]   GSE205522: error: missing value where TRUE/FALSE needed 
+[23:48:40] processing GSE177132 
+[23:48:55]   GSE177132: per-sample files only (RAW.tar) 
+[23:48:55] processing GSE42420 
+[23:49:07]   GSE42420: per-sample files only (RAW.tar) 
+[23:49:07] processing GSE156336 
+[23:50:11]   GSE156336: ok, 2 file(s) audited 
+[23:50:11] processing GSE110193 
+[23:50:24]   GSE110193: per-sample files only (RAW.tar) 
+[23:50:24] processing GSE120746 
+[23:51:05]   GSE120746: ok, 1 file(s) audited 
+[23:51:05] processing GSE214029 
+[23:51:50]   GSE214029: ok, 2 file(s) audited 
+[23:51:50] processing GSE175370 
+[23:52:26]   GSE175370: ok, 2 file(s) audited 
+[23:52:26] processing GSE223888 
+[23:52:39]   GSE223888: per-sample files only (RAW.tar) 
+[23:52:39] processing GSE201676 
+[23:53:01]   GSE201676: ok, 1 file(s) audited 
+[23:53:01] processing GSE162230 
+[23:53:24]   GSE162230: ok, 1 file(s) audited 
+[23:53:24] processing GSE205880 
+[23:53:51]   GSE205880: ok, 1 file(s) audited 
+[23:53:51] processing GSE225640 
+[23:54:15]   GSE225640: error: missing value where TRUE/FALSE needed 
+[23:54:15] processing GSE76240 
+[23:54:36]   GSE76240: ok, 1 file(s) audited 
+[23:54:36] processing GSE228307 
+[23:54:51]   GSE228307: no matrix file 
+[23:54:51] processing GSE159264 
+[23:55:03]   GSE159264: per-sample files only (RAW.tar) 
+[23:55:03] processing GSE199030 
+[23:55:25]   GSE199030: ok, 1 file(s) audited 
+[23:55:25] processing GSE75070 
+[23:55:51]   GSE75070: error: missing value where TRUE/FALSE needed 
+[23:55:51] processing GSE44379 
+[23:56:13]   GSE44379: ok, 1 file(s) audited 
+[23:56:13] processing GSE162855 
+[23:57:48]   GSE162855: ok, 2 file(s) audited 
+[23:57:48] processing GSE113005 
+[23:58:11]   GSE113005: per-sample files only (RAW.tar) 
+[23:58:11] processing GSE71340 
+[23:58:47]   GSE71340: ok, 1 file(s) audited 
+[23:58:47] processing GSE153873 
+[23:59:19]   GSE153873: ok, 3 file(s) audited 
+[23:59:19] processing GSE140150 
+[23:59:57]   GSE140150: ok, 2 file(s) audited 
+[23:59:57] processing GSE135319 
+[00:00:34]   GSE135319: ok, 2 file(s) audited 
+[00:00:34] processing GSE149200 
+[00:00:56]   GSE149200: ok, 0 file(s) audited 
+[00:00:56] processing GSE99596 
+[00:01:09]   GSE99596: per-sample files only (RAW.tar) 
+[00:01:09] processing GSE227433 
+[00:01:35]   GSE227433: ok, 1 file(s) audited 
+[00:01:35] processing GSE166337 
+[00:01:55]   GSE166337: ok, 1 file(s) audited 
+[00:01:55] processing GSE241615 
+[00:02:13]   GSE241615: ok, 1 file(s) audited 
+[00:02:13] processing GSE135552 
+[00:02:36]   GSE135552: ok, 1 file(s) audited 
+[00:02:36] processing GSE74198 
+[00:02:50]   GSE74198: per-sample files only (RAW.tar) 
+[00:02:50] processing GSE88446 
+[00:03:03]   GSE88446: per-sample files only (RAW.tar) 
+[00:03:03] processing GSE241108 
+[00:03:26]   GSE241108: error: missing value where TRUE/FALSE needed 
+[00:03:26] processing GSE122524 
+[00:03:52]   GSE122524: ok, 1 file(s) audited 
+[00:03:52] processing GSE232258 
+[00:04:14]   GSE232258: ok, 1 file(s) audited 
+[00:04:14] processing GSE190381 
+[00:04:36]   GSE190381: ok, 1 file(s) audited 
+[00:04:36] processing GSE178665 
+[00:04:50]   GSE178665: per-sample files only (RAW.tar) 
+[00:04:50] processing GSE100077 
+[00:05:50]   GSE100077: ok, 2 file(s) audited 
+[00:05:50] processing GSE198609 
+[00:06:14]   GSE198609: ok, 1 file(s) audited 
+[00:06:14] processing GSE120920 
+[00:06:41]   GSE120920: per-sample files only (RAW.tar) 
+[00:06:41] processing GSE183519 
+[00:07:05]   GSE183519: ok, 1 file(s) audited 
+[00:07:05] processing GSE160252 
+[00:07:44]   GSE160252: ok, 2 file(s) audited 
+[00:07:44] processing GSE101571 
+[00:08:18]   GSE101571: ok, 2 file(s) audited 
+[00:08:18] processing GSE130005 
+[00:08:30]   GSE130005: per-sample files only (RAW.tar) 
+[00:08:30] processing GSE48865 
+[00:08:53]   GSE48865: per-sample files only (RAW.tar) 
+[00:08:53] processing GSE172432 
+[00:09:43]   GSE172432: ok, 1 file(s) audited 
+[00:09:43] processing GSE144293 
+[00:09:58]   GSE144293: per-sample files only (RAW.tar) 
+[00:09:58] processing GSE87708 
+[00:10:16]   GSE87708: ok, 1 file(s) audited 
+[00:10:16] processing GSE195764 
+[00:11:10]   GSE195764: ok, 2 file(s) audited 
+[00:11:10] processing GSE246689 
+[00:12:00]   GSE246689: ok, 3 file(s) audited 
+[00:12:00] processing GSE95280 
+[00:12:49]   GSE95280: ok, 3 file(s) audited 
+[00:12:49] processing GSE111199 
+[00:13:08]   GSE111199: ok, 1 file(s) audited 
+[00:13:08] processing GSE63375 
+[00:13:47]   GSE63375: ok, 3 file(s) audited 
+[00:13:47] processing GSE67713 
+[00:14:00]   GSE67713: no matrix file 
+[00:14:00] processing GSE148378 
+[00:14:14]   GSE148378: per-sample files only (RAW.tar) 
+[00:14:14] processing GSE149167 
+[00:14:27]   GSE149167: per-sample files only (RAW.tar) 
+[00:14:27] processing GSE168831 
+[00:14:45]   GSE168831: no matrix file 
+[00:14:45] processing GSE261684 
+[00:15:14]   GSE261684: error: missing value where TRUE/FALSE needed 
+[00:15:14] processing GSE158958 
+[00:15:54]   GSE158958: ok, 2 file(s) audited 
+[00:15:54] processing GSE106520 
+[00:16:09]   GSE106520: per-sample files only (RAW.tar) 
+[00:16:09] processing GSE70068 
+[00:16:22]   GSE70068: no matrix file 
+[00:16:22] processing GSE145774 
+[00:16:39]   GSE145774: per-sample files only (RAW.tar) 
+[00:16:39] processing GSE101575 
+[00:16:53]   GSE101575: no matrix file 
+[00:16:53] processing GSE58335 
+[00:17:06]   GSE58335: per-sample files only (RAW.tar) 
+[00:17:06] processing GSE201668 
+[00:17:21]   GSE201668: per-sample files only (RAW.tar) 
+[00:17:21] processing GSE228038 
+[00:17:41]   GSE228038: ok, 1 file(s) audited 
+[00:17:41] processing GSE88437 
+[00:17:54]   GSE88437: per-sample files only (RAW.tar) 
+[00:17:54] processing GSE135934 
+[00:18:12]   GSE135934: ok, 1 file(s) audited 
+[00:18:12] processing GSE162295 
+[00:18:56]   GSE162295: ok, 3 file(s) audited 
+[00:18:56] processing GSE180652 
+[00:19:43]   GSE180652: ok, 2 file(s) audited 
+[00:19:43] processing GSE150933 
+[00:19:55]   GSE150933: per-sample files only (RAW.tar) 
+[00:19:55] processing GSE242687 
+[00:20:13]   GSE242687: ok, 1 file(s) audited 
+[00:20:13] processing GSE235268 
+[00:20:59]   GSE235268: ok, 1 file(s) audited 
+[00:20:59] processing GSE109163 
+[00:21:12]   GSE109163: no matrix file 
+[00:21:12] processing GSE221394 
+[00:21:30]   GSE221394: ok, 1 file(s) audited 
+[00:21:30] processing GSE97589 
+[00:21:43]   GSE97589: per-sample files only (RAW.tar) 
+[00:21:43] processing GSE155164 
+[00:22:19]   GSE155164: ok, 2 file(s) audited 
+[00:22:19] processing GSE160383 
+[00:22:43]   GSE160383: ok, 1 file(s) audited 
+[00:22:43] processing GSE63966 
+[00:23:05]   GSE63966: ok, 0 file(s) audited 
+[00:23:05] processing GSE92496 
+[00:23:40]   GSE92496: ok, 2 file(s) audited 
+[00:23:40] processing GSE187081 
+[00:24:05]   GSE187081: per-sample files only (RAW.tar) 
+[00:24:05] processing GSE154470 
+[00:24:21]   GSE154470: ok, 1 file(s) audited 
+[00:24:21] processing GSE246690 
+[00:24:48]   GSE246690: ok, 1 file(s) audited 
+[00:24:48] processing GSE61603 
+[00:25:02]   GSE61603: per-sample files only (RAW.tar) 
+[00:25:02] processing GSE97644 
+[00:25:34]   GSE97644: ok, 2 file(s) audited 
+[00:25:34] processing GSE262419 
+[00:28:22]   GSE262419: ok, 3 file(s) audited 
+[00:28:22] processing GSE88089 
+[00:28:36]   GSE88089: per-sample files only (RAW.tar) 
+[00:28:36] processing GSE92277 
+[00:28:57]   GSE92277: ok, 1 file(s) audited 
+[00:28:57] processing GSE46514 
+[00:29:15]   GSE46514: ok, 1 file(s) audited 
+[00:29:15] processing GSE228026 
+[00:29:48]   GSE228026: ok, 3 file(s) audited 
+[00:29:48] processing GSE177420 
+[00:30:34]   GSE177420: per-sample files only (RAW.tar) 
+[00:30:34] processing GSE202682 
+[00:30:53]   GSE202682: ok, 1 file(s) audited 
+[00:30:53] processing GSE117818 
+[00:31:04]   GSE117818: no matrix file 
+[00:31:04] processing GSE165144 
+[00:31:31]   GSE165144: ok, 1 file(s) audited 
+[00:31:31] processing GSE52600 
+[00:31:42]   GSE52600: per-sample files only (RAW.tar) 
+[00:31:42] processing GSE153005 
+[00:32:09]   GSE153005: ok, 2 file(s) audited 
+[00:32:09] processing GSE89799 
+[00:39:18]   GSE89799: ok, 1 file(s) audited 
+[00:39:18] processing GSE213714 
+[00:39:32]   GSE213714: per-sample files only (RAW.tar) 
+[00:39:32] processing GSE102762 
+[00:39:49]   GSE102762: ok, 1 file(s) audited 
+[00:39:49] processing GSE159091 
+[00:40:27]   GSE159091: error: missing value where TRUE/FALSE needed 
+[00:40:27] processing GSE124057 
+[00:40:47]   GSE124057: ok, 1 file(s) audited 
+[00:40:47] processing GSE236435 
+[00:41:13]   GSE236435: ok, 1 file(s) audited 
+[00:41:13] processing GSE116346 
+[00:41:37]   GSE116346: ok, 1 file(s) audited 
+[00:41:37] processing GSE122986 
+[00:42:00]   GSE122986: ok, 0 file(s) audited 
+[00:42:00] processing GSE155432 
+[00:42:31]   GSE155432: error: missing value where TRUE/FALSE needed 
+[00:42:31] processing GSE115307 
+[00:42:44]   GSE115307: per-sample files only (RAW.tar) 
+[00:42:44] processing GSE200339 
+[00:43:29]   GSE200339: ok, 3 file(s) audited 
+[00:43:29] processing GSE192919 
+[00:44:00]   GSE192919: ok, 3 file(s) audited 
+[00:44:00] processing GSE192403 
+[00:44:12]   GSE192403: no matrix file 
+[00:44:12] processing GSE233826 
+[00:44:41]   GSE233826: ok, 3 file(s) audited 
+[00:44:41] processing GSE184217 
+[00:45:11]   GSE184217: ok, 2 file(s) audited 
+[00:45:11] processing GSE171227 
+[00:45:27]   GSE171227: per-sample files only (RAW.tar) 
+[00:45:27] processing GSE241427 
+[00:45:55]   GSE241427: error: missing value where TRUE/FALSE needed 
+[00:45:55] processing GSE128914 
+[00:46:14]   GSE128914: ok, 1 file(s) audited 
+[00:46:14] processing GSE185728 
+[00:46:38]   GSE185728: ok, 1 file(s) audited 
+[00:46:38] processing GSE156941 
+[00:46:55]   GSE156941: ok, 1 file(s) audited 
+[00:46:55] processing GSE260666 
+[00:47:14]   GSE260666: ok, 1 file(s) audited 
+[00:47:14] processing GSE168797 
+[00:47:41]   GSE168797: ok, 2 file(s) audited 
+[00:47:41] processing GSE129715 
+[00:48:01]   GSE129715: ok, 1 file(s) audited 
+[00:48:01] processing GSE240167 
+[00:48:23]   GSE240167: ok, 1 file(s) audited 
+[00:48:23] processing GSE187614 
+[00:48:36]   GSE187614: per-sample files only (RAW.tar) 
+[00:48:36] processing GSE107399 
+[00:48:53]   GSE107399: per-sample files only (RAW.tar) 
+[00:48:53] processing GSE205105 
+[00:49:20]   GSE205105: ok, 2 file(s) audited 
+[00:49:20] processing GSE188464 
+[00:49:41]   GSE188464: ok, 1 file(s) audited 
+[00:49:41] processing GSE159964 
+[00:49:53]   GSE159964: per-sample files only (RAW.tar) 
+[00:49:53] processing GSE184459 
+[00:50:06]   GSE184459: per-sample files only (RAW.tar) 
+[00:50:06] processing GSE254523 
+[00:50:27]   GSE254523: ok, 1 file(s) audited 
+[00:50:27] processing GSE241308 
+[00:50:43]   GSE241308: per-sample files only (RAW.tar) 
+[00:50:43] processing GSE259271 
+[00:50:54]   GSE259271: no matrix file 
+[00:50:54] processing GSE86165 
+[00:51:22]   GSE86165: ok, 3 file(s) audited 
+[00:51:22] processing GSE91921 
+[00:51:34]   GSE91921: per-sample files only (RAW.tar) 
+[00:51:34] processing GSE88206 
+[00:51:45]   GSE88206: per-sample files only (RAW.tar) 
+[00:51:45] processing GSE243441 
+[00:52:20]   GSE243441: ok, 1 file(s) audited 
+[00:52:20] processing GSE128268 
+[00:52:42]   GSE128268: ok, 2 file(s) audited 
+[00:52:42] processing GSE266656 
+[00:53:04]   GSE266656: ok, 1 file(s) audited 
+[00:53:04] processing GSE196688 
+[00:53:22]   GSE196688: ok, 1 file(s) audited 
+[00:53:22] processing GSE199196 
+[00:53:58]   GSE199196: ok, 2 file(s) audited 
+[00:53:58] processing GSE177330 
+[00:54:09]   GSE177330: per-sample files only (RAW.tar) 
+[00:54:09] processing GSE177931 
+[00:54:22]   GSE177931: per-sample files only (RAW.tar) 
+[00:54:22] processing GSE242690 
+[00:54:34]   GSE242690: per-sample files only (RAW.tar) 
+[00:54:34] processing GSE184426 
+[00:55:25]   GSE184426: ok, 2 file(s) audited 
+[00:55:25] processing GSE136745 
+[00:55:40]   GSE136745: ok, 1 file(s) audited 
+[00:55:40] processing GSE130358 
+[00:55:58]   GSE130358: ok, 1 file(s) audited 
+[00:55:58] processing GSE67770 
+[00:56:13]   GSE67770: per-sample files only (RAW.tar) 
+[00:56:13] processing GSE116929 
+[00:56:31]   GSE116929: ok, 1 file(s) audited 
+[00:56:31] processing GSE271926 
+[00:56:59]   GSE271926: ok, 2 file(s) audited 
+[00:56:59] processing GSE29116 
+[00:57:12]   GSE29116: per-sample files only (RAW.tar) 
+[00:57:12] processing GSE155970 
+[00:57:40]   GSE155970: ok, 2 file(s) audited 
+[00:57:40] processing GSE188085 
+[00:57:52]   GSE188085: per-sample files only (RAW.tar) 
+[00:57:52] processing GSE191010 
+[00:58:09]   GSE191010: ok, 1 file(s) audited 
+[00:58:09] processing GSE93030 
+[00:58:30]   GSE93030: ok, 1 file(s) audited 
+[00:58:30] processing GSE169589 
+[00:59:05]   GSE169589: ok, 2 file(s) audited 
+[00:59:05] processing GSE230687 
+[00:59:38]   GSE230687: ok, 3 file(s) audited 
+[00:59:38] processing GSE216540 
+[01:00:05]   GSE216540: ok, 1 file(s) audited 
+[01:00:05] processing GSE92328 
+[01:00:17]   GSE92328: per-sample files only (RAW.tar) 
+[01:00:17] processing GSE139924 
+[01:00:44]   GSE139924: ok, 3 file(s) audited 
+[01:00:44] processing GSE219391 
+[01:00:55]   GSE219391: per-sample files only (RAW.tar) 
+[01:00:55] processing GSE249914 
+[01:01:25]   GSE249914: ok, 2 file(s) audited 
+[01:01:25] processing GSE168188 
+[01:01:37]   GSE168188: per-sample files only (RAW.tar) 
+[01:01:37] processing GSE70694 
+[01:01:52]   GSE70694: per-sample files only (RAW.tar) 
+[01:01:52] processing GSE176006 
+[01:02:35]   GSE176006: ok, 3 file(s) audited 
+[01:02:35] processing GSE88044 
+[01:02:47]   GSE88044: per-sample files only (RAW.tar) 
+[01:02:47] processing GSE160724 
+[01:03:33]   GSE160724: ok, 3 file(s) audited 
+[01:03:33] series processed: 369, with an auditable author matrix: 200 
+[01:03:34] wrote validation/geo_study/results/summary.md 
+[11:41:32] processing GSE89065 
+[11:42:33] GEO annotation unavailable (NCBI returned a web page (bot check or error) instead of the file: https://www.ncbi.nlm.nih.gov/geo/download/?format=file&type=rnaseq_counts&file=Human.GRCh38.p13.annot.tsv.gz) - using NCBI Gene's gene_info instead 
+[11:42:41]   GSE89065: per-sample files only (RAW.tar) 
+[11:42:41] series processed: 369, with an auditable author matrix: 200 
+[11:42:42] wrote validation/geo_study/results/summary.md 
+[12:12:39] processing GSE172052 
+[12:13:19] GEO annotation unavailable (NCBI returned a web page (bot check or error) instead of the file: https://www.ncbi.nlm.nih.gov/geo/download/?format=file&type=rnaseq_counts&file=Human.GRCh38.p13.annot.tsv.gz) - using NCBI Gene's gene_info instead 
+[12:15:09]   GSE172052: ok, 3 file(s) audited 
+[12:15:09] processing GSE163622 
+[12:15:19]   GSE163622: ok, 2 file(s) audited 
+[12:15:19] processing GSE118431 
+[12:15:37]   GSE118431: ok, 3 file(s) audited 
+[12:15:37] processing GSE241118 
+[12:15:43]   GSE241118: ok, 1 file(s) audited 
+[12:15:43] processing GSE147413 
+[12:15:53]   GSE147413: ok, 2 file(s) audited 
+[12:15:53] processing GSE173735 
+[12:16:10]   GSE173735: ok, 3 file(s) audited 
+[12:16:10] processing GSE160159 
+[12:16:48]   GSE160159: ok, 3 file(s) audited 
+[12:16:48] processing GSE43143 
+[12:16:54]   GSE43143: ok, 1 file(s) audited 
+[12:16:54] processing GSE177757 
+[12:17:24]   GSE177757: ok, 3 file(s) audited 
+[12:17:24] processing GSE197514 
+[12:17:50]   GSE197514: ok, 2 file(s) audited 
+[12:17:50] processing GSE113585 
+[12:17:58]   GSE113585: ok, 1 file(s) audited 
+[12:17:58] processing GSE50535 
+[12:18:09]   GSE50535: ok, 3 file(s) audited 
+[12:18:09] processing GSE149184 
+[12:18:22]   GSE149184: ok, 2 file(s) audited 
+[12:18:22] processing GSE116865 
+[12:18:29]   GSE116865: ok, 1 file(s) audited 
+[12:18:29] processing GSE217999 
+[12:18:47]   GSE217999: ok, 3 file(s) audited 
+[12:18:47] processing GSE205522 
+[12:18:54]   GSE205522: ok, 1 file(s) audited 
+[12:18:54] processing GSE225640 
+[12:19:00]   GSE225640: ok, 1 file(s) audited 
+[12:19:00] processing GSE75070 
+[12:19:08]   GSE75070: ok, 2 file(s) audited 
+[12:19:08] processing GSE140150 
+[12:19:21]   GSE140150: ok, 3 file(s) audited 
+[12:19:21] processing GSE241108 
+[12:19:28]   GSE241108: ok, 1 file(s) audited 
+[12:19:28] processing GSE261684 
+[12:19:37]   GSE261684: ok, 1 file(s) audited 
+[12:19:37] processing GSE159091 
+[12:19:47]   GSE159091: ok, 1 file(s) audited 
+[12:19:47] processing GSE155432 
+[12:20:04]   GSE155432: ok, 2 file(s) audited 
+[12:20:04] processing GSE241427 
+[12:20:27]   GSE241427: ok, 3 file(s) audited 
+[12:20:27] series processed: 369, with an auditable author matrix: 221 
+[12:20:50] consequence GSE122524 GSE122524_gene_matrix.txt.gz: NCBI raw 2116 DE genes, author file 405, both 237 
+[12:20:59] consequence GSE131147 GSE131147_Tagraxofusp_resistance_RNA_rpkm.txt.gz: NCBI raw 886 DE genes, author file 24, both 24 
+[12:21:07] consequence GSE134886 GSE134886_gene_all_fpkm.csv.gz: NCBI raw 7 DE genes, author file 0, both 0 
+[12:21:16] consequence GSE180883 GSE180883_HTseq-out.txt.gz: NCBI raw 6307 DE genes, author file 980, both 558 
+[12:21:25] consequence GSE200339 GSE200339_Normalized_Filtered5CPM_Gene_Counts.txt.gz: NCBI raw 1688 DE genes, author file 288, both 269 
+[12:21:33] consequence GSE233826 GSE233826_RNASeq_processed_HT29.txt.gz: NCBI raw 4357 DE genes, author file 3313, both 2920 
+[12:21:50] consequence GSE86430 GSE86430_normalized_counts_DESeq.txt.gz: NCBI raw 26 DE genes, author file 16, both 12 
+[12:21:51] wrote validation/geo_study/results/summary.md 
+[14:27:15] processing GSE243702 
+[14:28:00] GEO annotation unavailable (NCBI returned a web page (bot check or error) instead of the file: https://www.ncbi.nlm.nih.gov/geo/download/?format=file&type=rnaseq_counts&file=Human.GRCh38.p13.annot.tsv.gz) - using NCBI Gene's gene_info instead 
+[14:28:13]   GSE243702: ok, 1 file(s) audited 
+[14:28:13] processing GSE75011 
+[14:28:28]   GSE75011: ok, 1 file(s) audited 
+[14:28:28] processing GSE188464 
+[14:28:44]   GSE188464: ok, 1 file(s) audited 
+[14:28:44] series processed: 369, with an auditable author matrix: 221 
+[14:28:44] wrote validation/geo_study/results/summary.md 
+[14:40:24] processing GSE155336 
+[14:41:08] GEO annotation unavailable (NCBI returned a web page (bot check or error) instead of the file: https://www.ncbi.nlm.nih.gov/geo/download/?format=file&type=rnaseq_counts&file=Human.GRCh38.p13.annot.tsv.gz) - using NCBI Gene's gene_info instead 
+[14:41:20]   GSE155336: ok, 2 file(s) audited 
+[14:41:20] processing GSE198609 
+[14:41:29]   GSE198609: ok, 1 file(s) audited 
+[14:41:30] processing GSE233826 
+[14:41:43]   GSE233826: ok, 3 file(s) audited 
+[14:41:43] series processed: 369, with an auditable author matrix: 221 
+[14:41:43] wrote validation/geo_study/results/summary.md 

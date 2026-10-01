@@ -1,0 +1,8 @@
+"gse","file","labelled_as","attest_value","condition","n_per_group","de_ncbi_raw","de_author_file","de_both","de_ncbi_on_shared_genes"
+"GSE122524","GSE122524_gene_matrix.txt.gz","unlabelled","NOT PERMITTED","ch_days.of.differentiation","3+3",2116,405,237,1940
+"GSE131147","GSE131147_Tagraxofusp_resistance_RNA_rpkm.txt.gz","normalised","NOT PERMITTED","ch_treatment","6+6",886,24,24,736
+"GSE134886","GSE134886_gene_all_fpkm.csv.gz","normalised","NOT PERMITTED","ch_tissue","3+3",7,0,0,7
+"GSE180883","GSE180883_HTseq-out.txt.gz","counts","PERMITTED","ch_treatment","3+3",6307,980,558,5346
+"GSE200339","GSE200339_Normalized_Filtered5CPM_Gene_Counts.txt.gz","normalised","CAUTION","ch_genotype","3+6",1688,288,269,1335
+"GSE233826","GSE233826_RNASeq_processed_HT29.txt.gz","unlabelled","NOT PERMITTED","ch_treatment","3+3",4357,3313,2920,3676
+"GSE86430","GSE86430_normalized_counts_DESeq.txt.gz","normalised","CAUTION","ch_ethnicity","4+12",26,16,12,21
