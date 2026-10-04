@@ -1,5 +1,7 @@
 # attest
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23135720.svg)](https://doi.org/10.5281/zenodo.23135720)
+
 **Can this data support the analysis you are about to run on it?**
 
 `attest` audits an RNA-seq count matrix and its design *before* differential expression.
@@ -327,6 +329,14 @@ design log records each one: what was assumed, which dataset broke it, what repl
 # install.packages("remotes")
 remotes::install_github("shahbazigenomics/attest")
 ```
+
+## Citation
+
+If you use attest, please cite the archived release:
+
+Shahbazi A. attest: audit an RNA-seq count matrix and its design before differential expression. Zenodo. https://doi.org/10.5281/zenodo.23135720
+
+GitHub's "Cite this repository" button gives the same record (`CITATION.cff`).
 
 ## Related
 
