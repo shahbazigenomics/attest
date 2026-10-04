@@ -7,7 +7,7 @@ authors:
     given-names: Amir
     orcid: "https://orcid.org/0009-0001-4175-009X"
 version: 0.1.0
-doi: 10.5281/zenodo.23135720
+doi: 10.5281/zenodo.23135719
 license: MIT
 repository-code: "https://github.com/shahbazigenomics/attest"
 url: "https://github.com/shahbazigenomics/attest"
