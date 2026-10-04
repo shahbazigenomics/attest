@@ -28,7 +28,7 @@ output for libraries of known protocol, simulated from a synthetic genome and
 counted with the real tools; they back \code{\link[=attest_strandedness]{attest_strandedness()}}.
 }
 \author{
-\strong{Maintainer}: Amir Shahbazi \email{amirshahbazi580@gmail.com}
+\strong{Maintainer}: Amir Shahbazi \email{shahbazigenomics@gmail.com}
 
 }
 \keyword{internal}

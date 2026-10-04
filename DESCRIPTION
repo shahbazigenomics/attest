@@ -1,7 +1,7 @@
 Package: attest
 Title: Check Whether RNA-Seq Count Data Can Support the Analysis Run on It
 Version: 0.1.0
-Authors@R: person("Amir", "Shahbazi", email = "amirshahbazi580@gmail.com", role = c("aut", "cre"))
+Authors@R: person("Amir", "Shahbazi", email = "shahbazigenomics@gmail.com", role = c("aut", "cre"))
 Description: Audits an RNA-seq count matrix, its sample sheet and its design
     before differential expression analysis with tools such as 'DESeq2',
     'edgeR' or 'limma'. It does not analyse expression. Each check
