@@ -13,6 +13,8 @@ Description: Audits an RNA-seq count matrix, its sample sheet and its design
     verdict, the evidence behind it, and the checks the inputs could not
     answer. A separate scope report states, per gene, the smallest fold
     change the data could have detected.
+URL: https://github.com/shahbazigenomics/attest
+BugReports: https://github.com/shahbazigenomics/attest/issues
 License: MIT + file LICENSE
 Language: en-GB
 Encoding: UTF-8

@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+title: "attest: audit an RNA-seq count matrix and its design before differential expression"
+type: software
+authors:
+  - family-names: Shahbazi
+    given-names: Amir
+version: 0.1.0
+doi: 10.5281/zenodo.23135720
+license: MIT
+repository-code: "https://github.com/shahbazigenomics/attest"
+url: "https://github.com/shahbazigenomics/attest"
