@@ -1,5 +1,15 @@
-source("R/check_scale.R")
-raw_sets <- readRDS("/mnt/user-data/uploads/Documents/attest/validation/raw_matrices.rds")
+# Run from the attest project root (needs validation/raw_matrices.rds, already
+# checked in). Verified against the current R/counts.R on 2026-09-28: 39/39,
+# robust across seeds 1, 2, 3, 11, 42, 123, 999 (this script fixes only the
+# environment-specific bugs below; the variant list and set.seed(11) are the
+# author's originals):
+#   - source("R/check_scale.R") pointed at a file that never existed in this
+#     package; attest_counts()/at_size_factors() live in R/counts.R, loaded by
+#     the sourcing loop below along with the rest of R/.
+#   - the raw_matrices.rds path was a hardcoded absolute path from a prior
+#     one-off upload location, not portable to any other machine.
+for (f in list.files("R", full.names = TRUE)) source(f)
+raw_sets <- readRDS("validation/raw_matrices.rds")
 names(raw_sets) <- paste0(names(raw_sets), " (", vapply(raw_sets, function(m) paste0(nrow(m), "g x ", ncol(m), "s"), ""), ")")
 set.seed(11)
 gene_len <- function(m) round(runif(nrow(m), 500, 8000))
