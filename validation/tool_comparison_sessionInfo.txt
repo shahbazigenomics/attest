@@ -1,0 +1,43 @@
+R version 4.6.2 (2026-10-29)
+Platform: aarch64-apple-darwin23
+Running under: macOS Golden Gate 27.0.1
+
+Matrix products: default
+BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib 
+LAPACK: /Library/Frameworks/R.framework/Versions/4.6/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+time zone: Asia/Tehran
+tzcode source: internal
+
+attached base packages:
+[1] stats4    stats     graphics  grDevices utils     datasets  methods  
+[8] base     
+
+other attached packages:
+ [1] attest_0.1.0                airway_1.32.0              
+ [3] DESeq2_1.52.0               SummarizedExperiment_1.42.0
+ [5] Biobase_2.72.0              MatrixGenerics_1.24.0      
+ [7] matrixStats_1.5.0           GenomicRanges_1.64.0       
+ [9] Seqinfo_1.2.0               IRanges_2.46.0             
+[11] S4Vectors_0.50.3            BiocGenerics_0.58.1        
+[13] generics_0.1.4              testthat_3.3.2             
+
+loaded via a namespace (and not attached):
+ [1] SparseArray_1.12.3  lattice_0.23-1      magrittr_2.0.5     
+ [4] grid_4.6.2          RColorBrewer_1.1-3  pkgload_1.5.3      
+ [7] rprojroot_2.1.1     Matrix_1.7-6        pkgbuild_1.4.8     
+[10] brio_1.1.5          limma_3.68.5        BiocManager_1.30.27
+[13] scales_1.4.0        codetools_0.2-20    abind_1.4-8        
+[16] cli_3.6.6           rlang_1.3.0         XVector_0.52.0     
+[19] DelayedArray_0.38.2 otel_0.2.0          S4Arrays_1.12.1    
+[22] tools_4.6.2         parallel_4.6.2      BiocParallel_1.46.0
+[25] dplyr_1.2.1         ggplot2_4.0.3       locfit_1.5-9.12    
+[28] vctrs_0.7.3         R6_2.6.1            lifecycle_1.0.5    
+[31] edgeR_4.10.7        pkgconfig_2.0.3     desc_1.4.3         
+[34] pillar_1.11.1       gtable_0.3.6        glue_1.8.1         
+[37] Rcpp_1.1.2          statmod_1.5.2       tibble_3.3.1       
+[40] tidyselect_1.2.1    farver_2.1.2        compiler_4.6.2     
+[43] S7_0.2.2           

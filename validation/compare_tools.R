@@ -1,7 +1,7 @@
 # What do the standard tools say when handed an invalid matrix?
 # Run in the attest project.  Needs: DESeq2, edgeR, limma (RNAseqQC optional).
 #   BiocManager::install(c("edgeR","limma","RNAseqQC"))
-source("R/check_scale.R")
+if (requireNamespace("pkgload", quietly = TRUE)) pkgload::load_all(".", quiet = TRUE) else library(attest)
 
 fx  <- readRDS("inst/extdata/fixtures.rds")
 m   <- fx$airway
@@ -28,14 +28,18 @@ say <- function(expr) {
 tools <- list(
   "DESeq2 (DESeqDataSetFromMatrix)" = function(x)
     DESeq2::DESeqDataSetFromMatrix(x, cd, ~ grp),
-  "edgeR (DGEList + calcNormFactors)" = function(x)
-    edgeR::calcNormFactors(edgeR::DGEList(counts = x, group = cd$grp)),
+  # edgeR >= 4.0 renamed calcNormFactors to normLibSizes; use whichever exists so the
+  # rename notice is not mistaken for a response to the input
+  "edgeR (DGEList + normLibSizes)" = function(x) {
+    nf <- if (exists("normLibSizes", envir = asNamespace("edgeR"))) edgeR::normLibSizes else edgeR::calcNormFactors
+    nf(edgeR::DGEList(counts = x, group = cd$grp))
+  },
   "limma-voom" = function(x)
     limma::voom(x, model.matrix(~ grp, cd)),
   # RNAseqQC::make_dds omitted: it prompts to create an AnnotationHub cache,
   # which blocks a scripted run and is unrelated to input validation.
   "attest" = function(x) {
-    v <- cw_check_scale(x); stop(paste0(v$verdict, ": ", v$reasons[1]))
+    v <- attest_counts(x); stop(paste0(v$verdict, ": ", v$headline))
   }
 )
 
@@ -53,4 +57,5 @@ for (tn in unique(res$tool)) {
   for (i in seq_len(nrow(sub))) cat(sprintf("  %-12s %s\n", sub$input[i], sub$response[i]))
 }
 write.csv(res, "validation/tool_comparison.csv", row.names = FALSE)
+writeLines(capture.output(sessionInfo()), "validation/tool_comparison_sessionInfo.txt")
 cat("\nwritten: validation/tool_comparison.csv\n")

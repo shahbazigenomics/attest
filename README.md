@@ -111,14 +111,14 @@ and recorded every message it produced (`validation/compare_tools.R`):
 | FPKM (non-integer) | ERROR: not integers | **silent** | **silent** | NOT PERMITTED |
 
 Rounding defeats the only check the tools make, and the consequence is not noise, it is
-lost findings. On the airway dataset (`~ cell + dex`, padj < 0.05):
+lost findings. On the airway dataset (`~ cell + dex`, padj < 0.05; `validation/consequence_airway.R`):
 
 | Input | DE genes | Shared with the correct run |
 |---|---|---|
-| raw counts | 3,993 | — |
-| DESeq2-normalised, rounded | 4,011 | ~all (+18 extra) |
-| rounded CPM | 877 | 876 |
-| rounded TPM | 516 | 513 |
+| raw counts | 4,028 | — |
+| DESeq2-normalised, rounded | 4,035 | 3,988 |
+| rounded CPM | 884 | 883 |
+| rounded TPM | 508 | 505 |
 
 A rounded-CPM matrix returns a *subset* of the true gene list: the analysis looks
 successful and quietly loses 78% of the signal.
@@ -270,7 +270,7 @@ pipeline step that acts on the verdict.
 - **39/39** value-scale verdicts correct across airway (human), pasilla (fly) and fission
   (yeast), 13 transformations each: CPM, TPM, FPKM and their rounded forms, log2(CPM+1),
   size-factor normalised, estimated counts, downsampling, gene filtering.
-- **Depth:** 1,215 thinned real matrices, 30k-10M reads per sample; all correct at 1M and
+- **Depth:** 810 thinned real matrices (3 datasets x 6 depths x 5 replicates x 9 input forms), 30k-10M reads per sample; all correct at 1M and
   above, no false alarm on raw counts at any depth (see known limits for the one miss).
 - **0 false alarms** on 180 simulated raw matrices spanning 9 regimes: typical bulk,
   tightly balanced libraries, n = 4, n = 50, shallow 3' (1M and 0.3M reads), sparse UMI
@@ -292,7 +292,7 @@ design log records each one: what was assumed, which dataset broke it, what repl
 ## Known limits
 
 - **Depth.** Every value-scale verdict was measured on the full airway, pasilla and fission
-  matrices binomially thinned to 30k-10M reads per sample (1,215 matrices,
+  matrices binomially thinned to 30k-10M reads per sample (810 matrices,
   `validation/depth_sweep.R`): all correct at 1M reads and above, no false alarm on raw
   counts at any depth. One miss below 1M: FPKM from the 36-sample fission time course is
   reported as possible estimated counts (CAUTION) rather than NOT PERMITTED, because at that
