@@ -113,6 +113,7 @@ process_series <- function(gse) {
     error = function(e) NULL)
 
   sp <- list_dir(ftp_series(gse, "suppl"))
+  if (is.null(sp))  { out$status <- "unavailable: file listing not served"; return(out) }
   if (!length(sp)) { out$status <- "no supplementary files"; return(out) }
   pre <- classify_suppl(sp, rep(NA_real_, length(sp)))
   sizes <- rep(NA_real_, length(sp))
@@ -133,8 +134,10 @@ process_series <- function(gse) {
     f <- use$file[i]
     row <- list(gse = gse, file = f, size_mb = use$size_mb[i], labelled_as = use$labelled_as[i])
     path <- tryCatch(geo_download(paste0(ftp_series(gse, "suppl"), f), file.path(cache_dir(gse), f)),
-                     error = function(e) NULL)
-    if (is.null(path)) { row$status <- "download failed"; rows[[i]] <- row; next }
+                     error = function(e) { logmsg("  download failed, ", f, ": ", conditionMessage(e)); NULL })
+    # a file listed by GEO that could not be fetched is a network failure, not a
+    # property of the series: not saved, so the series is retried on the next run
+    if (is.null(path)) { out$status <- "unavailable: author file download failed"; return(out) }
     tx <- tryCatch(to_text(path), error = function(e) NULL)
     if (is.null(tx)) { row$status <- "unreadable spreadsheet"; rows[[i]] <- row; next }
     row$from_excel <- tx$converted

@@ -152,13 +152,37 @@ gse_stub <- function(gse) {                        # GSE123456 -> GSE123nnn, GSE
 }
 ftp_series <- function(gse, sub) sprintf("https://ftp.ncbi.nlm.nih.gov/geo/series/%s/%s/%s/", gse_stub(gse), gse, sub)
 
-# file names in an FTP directory listing (HTML index)
+# file names in an FTP directory listing (HTML index). On 2026-11-01 NCBI's
+# HTTPS index served empty listings for directories that do hold files
+# (GSE180883/suppl: index empty, its files download with status 200). When the
+# index lists nothing, GEO's plain-text series record (acc.cgi ... form=text,
+# GEO's documented programmatic view) is read instead: it names every
+# supplementary file and platform. NULL means neither source could establish
+# the listing, so the caller treats it as transient, not as "no files".
 list_dir <- function(url) {
   x <- tryCatch(paste(geo_text(url), collapse = "\n"), error = function(e) "")
   h <- regmatches(x, gregexpr('href="[^"]+"', x))[[1]]
   h <- gsub('^href="|"$', "", h)
   h <- h[!grepl("^[?/]|^\\.\\.|^https?:", h) & !endsWith(h, "/")]
-  unique(utils::URLdecode(h))
+  out <- unique(utils::URLdecode(h))
+  if (length(out) || net$mode == "mock") return(out)
+  m <- regmatches(url, regexec("/geo/series/[^/]+/(GSE[0-9]+)/(suppl|matrix)/$", url))[[1]]
+  if (length(m) != 3) return(out)
+  soft_dir_listing(m[2], m[3])
+}
+
+soft_dir_listing <- function(gse, kind) {
+  u <- sprintf("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=%s&targ=self&form=text&view=brief", gse)
+  txt <- trimws(tryCatch(geo_text(u), error = function(e) character(0)))
+  if (!any(txt %in% paste(c("^SERIES =", "!Series_geo_accession ="), gse))) return(NULL)  # not the record: a bot check or error page
+  val <- function(key) sub(sprintf("^!%s = ", key), "", grep(sprintf("^!%s = ", key), txt, value = TRUE))
+  if (kind == "suppl") {
+    f <- val("Series_supplementary_file")
+    return(unique(utils::URLdecode(basename(f[grepl(sprintf("/%s/suppl/[^/]+$", gse), f)]))))
+  }
+  gpl <- unique(val("Series_platform_id"))                                # series matrix: one file per platform
+  if (!length(gpl)) return(NULL)
+  if (length(gpl) == 1) paste0(gse, "_series_matrix.txt.gz") else paste0(gse, "-", gpl, "_series_matrix.txt.gz")
 }
 
 # NCBI-generated counts for a series: the raw counts file and the annotation,

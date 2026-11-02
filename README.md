@@ -281,7 +281,7 @@ pipeline step that acts on the verdict.
   detectable at 80% power, then tested with DESeq2 - detected 80-85% of the time. An
   earlier version, checked only against a per-gene `glm.nb` test, looked calibrated
   (78-84%) and gave 66% against DESeq2; the numbers above replaced it.
-- **295 assertions** in the test suite, run against 3,000-gene fixtures shipped with the
+- **379 assertions** in the test suite, run against 3,000-gene fixtures shipped with the
   package, so the tests need no Bioconductor data packages.
 
 Several rules above replaced earlier ones that real data falsified: an FPKM rule that
