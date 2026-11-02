@@ -38,7 +38,7 @@ for (nm in names(designs)) {
   cat(sprintf("  %-22s %s\n", "DESeq2 (~batch+cond)",
       say({ d <- DESeqDataSetFromMatrix(mm, cd, ~ batch + cond); DESeq(d, quiet = TRUE) })))
   cat(sprintf("  %-22s %s\n", "edgeR (glmQLFit)",
-      say({ y <- calcNormFactors(DGEList(mm, group = cd$cond))
+      say({ y <- (if (exists("normLibSizes", envir = asNamespace("edgeR"))) normLibSizes else calcNormFactors)(DGEList(mm, group = cd$cond))
             des <- model.matrix(~ batch + cond, cd)
             glmQLFit(estimateDisp(y, des), des) })))
   cat(sprintf("  %-22s %s\n", "limma-voom",

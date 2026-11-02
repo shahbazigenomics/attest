@@ -98,6 +98,7 @@ for (nd in c(3, 4, 6, 8)) {
 }
 res <- do.call(rbind, res)
 utils::write.csv(res, "validation/detectability_calibration_deseq2.csv", row.names = FALSE)
+writeLines(capture.output(sessionInfo()), "validation/detectability_calibration_deseq2_sessionInfo.txt")
 
 agg <- stats::aggregate(cbind(median_claimed_fc, power_at_claimed_level, power_padj) ~ template + method,
                         res, mean)

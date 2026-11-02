@@ -1,0 +1,10 @@
+"regime","PERMITTED","CAUTION","NOT","UNKNOWN","false_alarm_pct"
+"bulk, typical (20M, CV 0.35)",20,0,0,0,0
+"bulk, balanced (20M, CV 0.05)",20,0,0,0,0
+"bulk, very balanced (20M, CV 0.02)",20,0,0,0,0
+"bulk, n=4 (20M, CV 0.35)",20,0,0,0,0
+"bulk, large cohort (n=50)",20,0,0,0,0
+"shallow 3' (1M, CV 0.35)",20,0,0,0,0
+"very shallow (0.3M, CV 0.35)",20,0,0,0,0
+"pseudobulk UMI (0.5M, sparse)",20,0,0,0,0
+"full annotation (60k genes)",20,0,0,0,0

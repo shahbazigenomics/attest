@@ -3,7 +3,6 @@
 .RData
 .Ruserdata
 validation/*.rds
-validation/*.csv
 inst/doc
 doc
 Meta

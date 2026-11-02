@@ -1,0 +1,5 @@
+"input","de_genes","shared_with_raw","lost_pct"
+"raw counts",4028,4028,0
+"DESeq2-normalised, rounded",4035,3988,1
+"rounded CPM",884,883,78.1
+"rounded TPM",508,505,87.5

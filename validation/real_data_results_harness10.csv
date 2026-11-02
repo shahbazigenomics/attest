@@ -1,0 +1,31 @@
+"dataset","variant","expected","got","agree"
+"airway (human, polyA)","raw counts","PERMITTED","PERMITTED",TRUE
+"airway (human, polyA)","CPM","NOT PERMITTED","NOT PERMITTED",TRUE
+"airway (human, polyA)","CPM rounded","NOT PERMITTED","NOT PERMITTED",TRUE
+"airway (human, polyA)","TPM rounded","NOT PERMITTED","NOT PERMITTED",TRUE
+"airway (human, polyA)","FPKM","NOT PERMITTED","NOT PERMITTED",TRUE
+"airway (human, polyA)","size-factor normalised","CAUTION","CAUTION",TRUE
+"airway (human, polyA)","log2(CPM+1)","NOT PERMITTED","NOT PERMITTED",TRUE
+"airway (human, polyA)","estimated counts","CAUTION","CAUTION",TRUE
+"airway (human, polyA)","downsampled 1/40","PERMITTED","PERMITTED",TRUE
+"airway (human, polyA)","expressed genes only","PERMITTED","PERMITTED",TRUE
+"pasilla (fly)","raw counts","PERMITTED","PERMITTED",TRUE
+"pasilla (fly)","CPM","NOT PERMITTED","NOT PERMITTED",TRUE
+"pasilla (fly)","CPM rounded","NOT PERMITTED","NOT PERMITTED",TRUE
+"pasilla (fly)","TPM rounded","NOT PERMITTED","NOT PERMITTED",TRUE
+"pasilla (fly)","FPKM","NOT PERMITTED","NOT PERMITTED",TRUE
+"pasilla (fly)","size-factor normalised","CAUTION","CAUTION",TRUE
+"pasilla (fly)","log2(CPM+1)","NOT PERMITTED","NOT PERMITTED",TRUE
+"pasilla (fly)","estimated counts","CAUTION","CAUTION",TRUE
+"pasilla (fly)","downsampled 1/40","PERMITTED","PERMITTED",TRUE
+"pasilla (fly)","expressed genes only","PERMITTED","PERMITTED",TRUE
+"fission (yeast)","raw counts","PERMITTED","PERMITTED",TRUE
+"fission (yeast)","CPM","NOT PERMITTED","NOT PERMITTED",TRUE
+"fission (yeast)","CPM rounded","NOT PERMITTED","NOT PERMITTED",TRUE
+"fission (yeast)","TPM rounded","NOT PERMITTED","NOT PERMITTED",TRUE
+"fission (yeast)","FPKM","NOT PERMITTED","NOT PERMITTED",TRUE
+"fission (yeast)","size-factor normalised","CAUTION","CAUTION",TRUE
+"fission (yeast)","log2(CPM+1)","NOT PERMITTED","NOT PERMITTED",TRUE
+"fission (yeast)","estimated counts","CAUTION","CAUTION",TRUE
+"fission (yeast)","downsampled 1/40","PERMITTED","PERMITTED",TRUE
+"fission (yeast)","expressed genes only","PERMITTED","PERMITTED",TRUE

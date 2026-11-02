@@ -1,0 +1,22 @@
+group,measure,k,n,estimate,wilson_lo,wilson_hi,exact_lo,exact_hi,source
+attest,"value-scale verdicts correct, 3 species x 13 transforms",39,39,100.0,91.0,100,91.0,100.0,real_data_results.csv
+attest,"depth sweep: verdicts correct at 10,000,000 reads/sample",135,135,100.0,97.2,100,97.3,100.0,depth_sweep.csv
+attest,"depth sweep: verdicts correct at 3,000,000 reads/sample",135,135,100.0,97.2,100,97.3,100.0,depth_sweep.csv
+attest,"depth sweep: verdicts correct at 1,000,000 reads/sample",135,135,100.0,97.2,100,97.3,100.0,depth_sweep.csv
+attest,"depth sweep: verdicts correct at 300,000 reads/sample",130,135,96.3,91.6,98.4,91.6,98.8,depth_sweep.csv
+attest,"depth sweep: verdicts correct at 100,000 reads/sample",130,135,96.3,91.6,98.4,91.6,98.8,depth_sweep.csv
+attest,"depth sweep: verdicts correct at 30,000 reads/sample",130,135,96.3,91.6,98.4,91.6,98.8,depth_sweep.csv
+attest,depth sweep: verdicts correct at >= 1M reads/sample,405,405,100.0,99.1,100.0,99.1,100.0,depth_sweep.csv
+attest,"depth sweep: false alarms on raw counts, all depths",0,180,0.0,0,2.1,0.0,2.0,depth_sweep.csv
+attest,false alarms on simulated raw matrices (9 regimes),0,180,0.0,0,2.1,0.0,2.0,simulation_specificity.csv
+attest,"GEO: not-raw files not called PERMITTED (sensitivity, lenient)",36,37,97.3,86.2,99.5,85.8,99.9,geo_study/results/files.csv
+attest,"GEO: not-raw files called NOT PERMITTED (sensitivity, strict)",31,37,83.8,68.9,92.3,68.0,93.8,geo_study/results/files.csv
+attest,GEO: raw-count files called PERMITTED (specificity),65,68,95.6,87.8,98.5,87.6,99.1,geo_study/results/files.csv
+attest,GEO: files called NOT PERMITTED (headline),108,341,31.7,27.0,36.8,26.8,36.9,geo_study/results/files.csv
+attest,GEO: files with an NCBI-based truth (truth coverage),129,341,37.8,32.8,43.1,32.7,43.2,geo_study/results/files.csv
+attest,GEO re-run: value-scale verdict identical,290,291,99.7,98.1,99.9,98.1,100.0,concordance_vs_2026-09-22.csv
+admissible,CEPH: sex calls wrong among samples called,0,16,0.0,0,19.4,0.0,20.6,"admissible identity, CEPH 1463"
+admissible,CEPH: unrelated pairs called related,0,11,0.0,0,25.9,0.0,28.5,"admissible identity, CEPH 1463"
+admissible,CEPH: first-degree pairs recognised as related,81,81,100.0,95.5,100,95.5,100.0,"admissible identity, CEPH 1463"
+admissible,CEPH: false duplicate pairs,0,136,0.0,0,2.7,0.0,2.7,"admissible identity, CEPH 1463"
+admissible,ANNOVAR reader: genotypes reconstructed correctly,120,120,100.0,96.9,100,97.0,100.0,tests/test_annovar_real.py

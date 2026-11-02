@@ -1,0 +1,40 @@
+"dataset","variant","expected","got","agree"
+"airway (63677g x 8s)","raw counts","PERMITTED","PERMITTED",TRUE
+"airway (63677g x 8s)","CPM","NOT PERMITTED","NOT PERMITTED",TRUE
+"airway (63677g x 8s)","CPM rounded","NOT PERMITTED","NOT PERMITTED",TRUE
+"airway (63677g x 8s)","TPM rounded","NOT PERMITTED","NOT PERMITTED",TRUE
+"airway (63677g x 8s)","FPKM","NOT PERMITTED","NOT PERMITTED",TRUE
+"airway (63677g x 8s)","FPKM rounded","NOT PERMITTED","NOT PERMITTED",TRUE
+"airway (63677g x 8s)","size-factor normalised","CAUTION","CAUTION",TRUE
+"airway (63677g x 8s)","log2(CPM+1)","NOT PERMITTED","NOT PERMITTED",TRUE
+"airway (63677g x 8s)","estimated counts","CAUTION","CAUTION",TRUE
+"airway (63677g x 8s)","downsampled 1/40","PERMITTED","PERMITTED",TRUE
+"airway (63677g x 8s)","downsampled 1/200","PERMITTED","PERMITTED",TRUE
+"airway (63677g x 8s)","expressed genes only","PERMITTED","PERMITTED",TRUE
+"airway (63677g x 8s)","protein-coding subset","PERMITTED","PERMITTED",TRUE
+"pasilla (14599g x 7s)","raw counts","PERMITTED","PERMITTED",TRUE
+"pasilla (14599g x 7s)","CPM","NOT PERMITTED","NOT PERMITTED",TRUE
+"pasilla (14599g x 7s)","CPM rounded","NOT PERMITTED","NOT PERMITTED",TRUE
+"pasilla (14599g x 7s)","TPM rounded","NOT PERMITTED","NOT PERMITTED",TRUE
+"pasilla (14599g x 7s)","FPKM","NOT PERMITTED","NOT PERMITTED",TRUE
+"pasilla (14599g x 7s)","FPKM rounded","NOT PERMITTED","NOT PERMITTED",TRUE
+"pasilla (14599g x 7s)","size-factor normalised","CAUTION","CAUTION",TRUE
+"pasilla (14599g x 7s)","log2(CPM+1)","NOT PERMITTED","NOT PERMITTED",TRUE
+"pasilla (14599g x 7s)","estimated counts","CAUTION","CAUTION",TRUE
+"pasilla (14599g x 7s)","downsampled 1/40","PERMITTED","PERMITTED",TRUE
+"pasilla (14599g x 7s)","downsampled 1/200","PERMITTED","PERMITTED",TRUE
+"pasilla (14599g x 7s)","expressed genes only","PERMITTED","PERMITTED",TRUE
+"pasilla (14599g x 7s)","protein-coding subset","PERMITTED","PERMITTED",TRUE
+"fission (7039g x 36s)","raw counts","PERMITTED","PERMITTED",TRUE
+"fission (7039g x 36s)","CPM","NOT PERMITTED","NOT PERMITTED",TRUE
+"fission (7039g x 36s)","CPM rounded","NOT PERMITTED","NOT PERMITTED",TRUE
+"fission (7039g x 36s)","TPM rounded","NOT PERMITTED","NOT PERMITTED",TRUE
+"fission (7039g x 36s)","FPKM","NOT PERMITTED","NOT PERMITTED",TRUE
+"fission (7039g x 36s)","FPKM rounded","NOT PERMITTED","NOT PERMITTED",TRUE
+"fission (7039g x 36s)","size-factor normalised","CAUTION","CAUTION",TRUE
+"fission (7039g x 36s)","log2(CPM+1)","NOT PERMITTED","NOT PERMITTED",TRUE
+"fission (7039g x 36s)","estimated counts","CAUTION","CAUTION",TRUE
+"fission (7039g x 36s)","downsampled 1/40","PERMITTED","PERMITTED",TRUE
+"fission (7039g x 36s)","downsampled 1/200","PERMITTED","PERMITTED",TRUE
+"fission (7039g x 36s)","expressed genes only","PERMITTED","PERMITTED",TRUE
+"fission (7039g x 36s)","protein-coding subset","PERMITTED","PERMITTED",TRUE
