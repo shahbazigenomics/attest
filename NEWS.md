@@ -1,3 +1,17 @@
+# attest 0.1.1
+
+No change to the package code; the checks give the same verdicts as 0.1.0.
+This release archives the validation material cited in the paper.
+
+* Validation outputs (depth sweep, simulations, tool comparison, detectability
+  calibration, statistics) are now tracked in the repository.
+* `validation/consequence_airway.R`: new, reproducible script for the DESeq2
+  consequence analysis on the airway data (`~ cell + dex`, padj < 0.05).
+* `validation/compare_tools.R` and `compare_design.R` run against the current
+  package and edgeR (`normLibSizes`); session information is recorded.
+* GEO study: frozen-code re-run with file-by-file concordance, listing and
+  download fixes in the harness, corrected provenance of the stopping rule.
+
 # attest 0.1.0
 
 First release.
